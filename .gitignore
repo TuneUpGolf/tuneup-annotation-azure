@@ -1,5 +1,5 @@
-node_modules
+node_modules/
+.env
 
 frontend/uploads/*.mp4
 frontend/uploads/*
-.env
