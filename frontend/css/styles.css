@@ -1,0 +1,311 @@
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: #1a1a1a;
+    height: 100dvh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: Arial, sans-serif;
+    overflow: hidden;
+}
+
+.video-container {
+    position: relative;
+    width: 100%;
+    height: 100dvh;
+    background: #000;
+    overflow: hidden;
+    /* Create new stacking context */
+    isolation: isolate;
+
+}
+
+.videos-wrapper {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    gap: 2px;
+    z-index: 5;
+}
+
+.video-wrapper {
+    position: relative;
+    flex: 1;
+    height: 100%;
+    min-width: 0;
+}
+
+.video-wrapper.hidden {
+    display: none;
+}
+
+.video-js {
+    width: 100% !important;
+    height: 100% !important;
+    z-index: 1;
+
+
+}
+
+/* Ensure the actual video stays behind */
+.video-js .vjs-tech {
+    position: absolute;
+
+}
+
+.video-js .vjs-control-bar {
+    position: absolute;
+    bottom: 0px;
+    width: 100%;
+}
+
+/* Keep controls on top */
+
+.video-js .vjs-big-play-button,
+.video-js .vjs-loading-spinner {
+    position: absolute !important;
+
+}
+
+/* Place canvas between video and controls */
+#annotation-canvas,
+.upper-canvas {
+    will-change: transform;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+
+
+}
+
+.drawing-mode {
+    pointer-events: all !important;
+}
+
+.canvas-container {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    z-index: 10;
+    pointer-events: none;
+}
+
+/* Toolbar Styles */
+.toolbar {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: inline-flex;
+    gap: 6px;
+    background: rgba(33, 33, 33, 0.7);
+    padding: 5px;
+    border-radius: 6px;
+    z-index: 1000;
+    white-space: nowrap;
+}
+
+.toolbar .tool-btn {
+    width: 40px;
+    height: 40px;
+    border: none;
+    background: transparent;
+    color: white;
+    cursor: pointer;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s;
+}
+
+.toolbar .tool-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.toolbar .tool-btn.active {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.toolbar .tool-btn svg {
+    width: 24px;
+    height: 24px;
+}
+
+/* Secondary Toolbar Styles */
+.secondary-toolbar {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    background: rgba(33, 33, 33, 0.9);
+    border-radius: 8px;
+    z-index: 1000;
+}
+
+.secondary-toolbar .secondary-btn {
+    width: 40px;
+    height: 40px;
+    border: none;
+    background: transparent;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.secondary-toolbar .secondary-btn.active {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.secondary-toolbar .secondary-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.secondary-toolbar .secondary-btn svg {
+    width: 24px;
+    height: 24px;
+}
+
+/* Clear All Container */
+.clear-all-container {
+    display: none;
+    position: fixed;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(33, 33, 33, 0.9);
+    padding: 2px;
+    border-radius: 8px;
+    z-index: 1000;
+}
+
+.clear-all-container .mobile-clear-btn {
+    width: 40px;
+    height: 40px;
+    border: none;
+    background: transparent;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+}
+/* Floating Upload Icon */
+.floating-upload-icon {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    transition: transform 0.2s ease-in-out;
+    z-index: 1000;
+    background-color: none; /* Temporary to check visibility */
+    padding: 5px;
+    border-radius: 50%;
+}
+
+/* Left of Video 1 */
+.video-wrapper:first-child .floating-upload-icon {
+    left: -0px;
+}
+
+/* Right of Video 2 */
+#second-video-wrapper .floating-upload-icon {
+    right: -0px;
+}
+
+.floating-upload-icon:hover {
+    transform: translateY(-50%) scale(1.1);
+}
+
+
+
+/* Mobile Styles */
+@media (max-width: 768px) {
+    .toolbar {
+        left: 10px;
+        gap: 4px;
+        top: 50%;
+        padding: 4px;
+        transform: translateY(-50%);
+        flex-direction: column;
+        width: 45px;
+    }
+
+
+    .secondary-toolbar {
+        top: 0;
+        left: 0;
+        right: 0;
+        width: 100%;
+        border-radius: 0;
+        padding: 8px 16px;
+        justify-content: center;
+        gap: 14px;
+        height: 65px;
+    }
+
+    .secondary-toolbar .secondary-btn {
+        width: 50px;
+        height: 50px;
+    }
+
+    .secondary-toolbar .secondary-btn svg {
+        width: 30px;
+        height: 30px;
+    }
+
+    .toolbar .tool-btn.clear-all {
+        display: none;
+    }
+
+    .toolbar .tool-btn {
+        width: 37px;
+        height: 37px;
+    }
+
+    .clear-all-container {
+        display: block;
+    }
+
+    .clear-all-container .mobile-clear-btn {
+        width: 45px;
+        height: 45px;
+    }
+
+    .clear-all-container .mobile-clear-btn svg {
+        width: 28px;
+        height: 28px;
+    }
+    #recordButton {
+        display: none;
+    }
+}
+
+.desktop-only {
+    display: none !important;
+}
+
+@media (min-width: 769px) {
+    .desktop-only {
+        display: flex !important;
+
+    }
+}
