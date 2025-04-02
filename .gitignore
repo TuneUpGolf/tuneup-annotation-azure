@@ -2,3 +2,4 @@ node_modules
 
 frontend/uploads/*.mp4
 frontend/uploads/*
+.env
