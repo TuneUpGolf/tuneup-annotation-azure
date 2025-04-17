@@ -35,334 +35,143 @@ class AppState {
 // Video player management
 class VideoManager {
     constructor() {
-        this.player1 = null;
-        this.player2 = null;
-        this.videoElement1 = document.querySelector('#video-player-1');
-        this.imageElement = null; // Track the image element if mediaType is image
+      this.videoElement1 = document.querySelector('#video-player-1');
+      this.imageElement = null;
     }
+  
     initializeMainPlayer() {
-        const mediaType = localStorage.getItem('mediaType');
-        const selectedMediaSrc = localStorage.getItem('selectedMediaSrc');
-        console.log("Media Type:", mediaType );
-        console.log("Selected Media Src:", selectedMediaSrc);
-        const urlParams = new URLSearchParams(window.location.search);
-        const userId = urlParams.get('userid');
-        const videoUrl = urlParams.get('videourl');
-        if (userId) {     
-            localStorage.setItem('userId', userId);
-        }
-        console.log('User ID:', userId);
-        console.log('Video URL:', videoUrl);
-        console.log('Current url:',window.location.href);
-
-        // Check if the media is an image
-        if (mediaType === 'image' && selectedMediaSrc) {
-            console.log("Got an image");
-            this.loadImage(selectedMediaSrc); // Load the image
-            localStorage.removeItem('selectedMediaSrc');
-            return; // Exit early; no need to initialize the video player
-        }
-    
-        // Initialize the video player only if the media type is video
-        if (!this.videoElement1) {
-            console.warn('Video player 1 is not present in the DOM. Skipping video initialization.');
-            return;
-        }
-        const self = this;
-    
-        this.player1 = videojs('video-player-1', {
-            controls: true,
-            autoplay: 'muted',
-            playsinline: true,
-            fluid: false,
-            preload: 'auto',
-            responsive: true,
-            fill: true,
-            enableSmoothSeeking: true,
-            nativeControlsForTouch:false,
-            controlBar: {
-                remainingTimeDisplay: false,
-                autoHide: false,
-                pictureInPictureToggle: false
-            },
-            userActions: { hotkeys: true },
-            html5: {
-                nativeVideoTracks: true,
-                nativeAudioTracks: true,
-                nativeTextTracks: false,
-                nativeControlsForTouch: false,
+      const mediaType = localStorage.getItem('mediaType');
+      const selectedMediaSrc = localStorage.getItem('selectedMediaSrc');
+      const urlParams = new URLSearchParams(window.location.search);
+      const userId = urlParams.get('userid');
+      const videoUrl = urlParams.get('videourl');
+  
+      if (userId) localStorage.setItem('userId', userId);
+  
+      if (mediaType === 'image' && selectedMediaSrc) {
+        this.loadImage(selectedMediaSrc);
+        localStorage.removeItem('selectedMediaSrc');
+        return;
+      }
+  
+      if (!this.videoElement1) {
+        console.warn('aksVideoPlayer container not found.');
+        return;
+      }
+  
+      const videoSrc = videoUrl || selectedMediaSrc;
+      if (!videoSrc) {
+        this.showUploadMessage();
+        return;
+      }
+  
+      // Initialize aksVideoPlayer
+      $(document).ready(() => {
+        $('#video-player-1').aksVideoPlayer({
+          file: [
+            {
+              file: videoSrc,
+              label: 'Auto'
             }
-        }, function onPlayerReady() {
-            const player = this;
-    
-            try {
-                // if (selectedMediaSrc) {
-                    if (videoUrl){
-                        player.src({
-                            type: 'video/mp4', // Ensure this matches the actual type of the video file
-                            src: videoUrl
-                        });
-                        player.on('error', function () {
-                            console.error('Error loading video:', player.error());
-                            // Provide a fallback video
-                            self.showUploadMessage(player);
-                        });
-                        player.on('loadeddata', async () => {
-                            console.log('Video has loaded successfully');
-                            self.removeUploadMessage(player);
-                            await saveToLibrary(videoUrl, userId);
-                        });
-                    }
-                   else if (selectedMediaSrc) {
-                    self.removeUploadMessage(player);
-                    player.src({
-                        type: 'video/mp4', // Ensure this matches the actual type of the video file
-                        src: selectedMediaSrc
-                    });
-
-                    localStorage.removeItem('selectedMediaSrc');
-    
-                    player.on('error', function () {
-                        console.error('Error loading video:', player.error());
-                        // Provide a fallback video
-                        self.showUploadMessage(player);
-                    });
-                } else {
-                    // Default video source
-                    self.showUploadMessage(player);
-                }
-                
-    
-                player.dimensions(player.currentWidth(), player.currentHeight());
-            }catch (error) {
-                console.error('Error initializing video player:', error);
-                self.showUploadMessage(player);
-            }
+          ],
+          poster: '',
+          autoplay:true,
+          muted:true,
+          rewind:false,
+          speed: [0.5, 1, 1.5, 2]
         });
+
+        // Wait until video element is ready
+        setTimeout(() => {
+            const videoEl = document.querySelector('#video-player-1 video');
+            
+            if (!videoEl) {
+                console.warn('aksVideoPlayer: <video> element not found');
+                return;
+            }
+            
+            console.log('Video is ready and has loaded metadata!');
+            const userId = localStorage.getItem('userId');
+            const videoUrl = videoEl.currentSrc;
+            if (userId && videoUrl) {
+                saveToLibrary(videoUrl, userId);
+            }
+        }, 1000);
+        
+      });
     }
-    
+  
+    initializeSecondPlayer(videoUrl) {
+      if (!videoUrl) {
+        console.warn('No video URL provided for second player.');
+        return;
+      }
+  
+      const secondPlayerEl = document.querySelector('#video-player-2');
+      if (!secondPlayerEl) {
+        console.warn('Second video container not found.');
+        return;
+      }
+  
+      $(document).ready(() => {
+        $('#video-player-2').aksVideoPlayer({
+          file: [
+            {
+              file: videoUrl,
+              label: 'Auto'
+            }
+          ],
+          poster: '',
+          autoplay:true,
+          muted:true,
+          rewind:false,
+          width: 640,
+          height: 360,
+          speed: [0.5, 1, 1.5, 2]
+        });
+      });
+    }
+  
     loadImage(imageSrc) {
-        const imgElement = document.createElement('img');
-        imgElement.src = imageSrc;
-        imgElement.alt = 'Selected Image';
-        imgElement.style.width = '100%';
-        imgElement.style.height = 'auto';
-    
-        // Replace the video element with the image
-        if (this.videoElement1) {
-            this.videoElement1.replaceWith(imgElement);
-            this.videoElement1 = null; // Clear the reference to avoid future issues
-        }
-    
-        console.log('Image loaded:', imageSrc);
-        
+      const imgElement = document.createElement('img');
+      imgElement.src = imageSrc;
+      imgElement.alt = 'Selected Image';
+      imgElement.style.width = '100%';
+      imgElement.style.height = 'auto';
+  
+      if (this.videoElement1) {
+        this.videoElement1.replaceWith(imgElement);
+        this.videoElement1 = null;
+      }
     }
-   
-    initializeSecondPlayer() {
-        const self = this;
-        if (!this.player2) {
-            this.player2 = videojs('video-player-2', {
-                controls: true,
-                autoplay: 'muted',
-                playsinline: true,
-                fluid: false,
-                preload: 'auto',
-                responsive: true,
-                fill: true,
-                enableSmoothSeeking: true,
-                controlBar: {
-                    remainingTimeDisplay: false,
-                    autoHide: false,
-                    pictureInPictureToggle: false
-                },
-                userActions: { hotkeys: true },
-                html5: {
-                    nativeVideoTracks: true,
-                    nativeAudioTracks: true,
-                    nativeTextTracks: false,
-                    nativeControlsForTouch: false,
-                }
-            }, function onPlayerReady() {
-                const player = this;
-                self.showUploadMessage(player);
-                player.dimensions(player.currentWidth(), player.currentHeight());
-            });
-
-            this.videoElement2 = document.querySelector('#video-player-2');
-        }
+  
+    showUploadMessage() {
+      const container = document.querySelector('#video-player-1');
+      const messageDiv = document.createElement('div');
+      messageDiv.innerHTML = `
+        <div style="
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          align-items: center;
+          height: 100%;
+          color: white;
+          background-color: rgba(0,0,0,0.6);
+          padding: 20px;
+          text-align: center;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="17 8 12 3 7 8"></polyline>
+            <line x1="12" y1="3" x2="12" y2="15"></line>
+          </svg>
+          <h3 style="margin-top: 15px; font-size: 18px;">Please upload a video to start analyzing</h3>
+          <p style="margin-top: 10px; font-size: 14px;">No video found. Upload to begin analysis.</p>
+        </div>
+      `;
+      container.innerHTML = '';
+      container.appendChild(messageDiv);
     }
-
-    handleSplitScreen() {
-        const secondWrapper = document.querySelector('#second-video-wrapper');
-        if (secondWrapper.classList.contains('hidden')) {
-            secondWrapper.classList.remove('hidden');
-            this.initializeSecondPlayer();
-            this.addFloatingUploadButtons();
-        } else {
-            secondWrapper.classList.add('hidden');
-            if (this.player2) {
-                this.player2.pause();
-            }
-            this.removeFloatingUploadButtons(); 
-        }
-        return true; // To trigger canvas update
-    }
-
-    updateDimensions() {
-        if (this.player1) {
-            this.player1.dimensions(
-                this.player1.currentWidth(),
-                this.player1.currentHeight()
-            );
-        }
-        if (this.player2) {
-            this.player2.dimensions(
-                this.player2.currentWidth(),
-                this.player2.currentHeight()
-            );
-        }
-    }
-
-    addFloatingUploadButtons() {
-        this.removeFloatingUploadButtons();
-    
-        const player1Wrapper = document.querySelector("#video-player-1").closest(".video-wrapper");
-        const player2Wrapper = document.querySelector("#video-player-2").closest(".video-wrapper");
-    
-        if (player1Wrapper) {
-            const uploadIcon1 = document.createElement("div");
-            uploadIcon1.innerHTML = this.getUploadSVG();
-            uploadIcon1.classList.add("floating-upload-icon", "player1-upload");
-            uploadIcon1.onclick = () => this.uploadVideo(1);
-            player1Wrapper.appendChild(uploadIcon1);
-        }
-    
-        if (player2Wrapper) {
-            const uploadIcon2 = document.createElement("div");
-            uploadIcon2.innerHTML = this.getUploadSVG();
-            uploadIcon2.classList.add("floating-upload-icon", "player2-upload");
-            uploadIcon2.onclick = () => this.uploadVideo(2);
-            player2Wrapper.appendChild(uploadIcon2);
-        }
-    
-        console.log("Upload icons added!"); // Debugging
-    }
-    
-    removeFloatingUploadButtons() {
-        document.querySelectorAll(".floating-upload-icon").forEach(icon => icon.remove());
-    }
-    
-    getUploadSVG() {
-        return `
-            <svg width="25" height="25" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                 <title>Change video</title>
-                <circle cx="12" cy="12" r="10" fill="white"/>
-                <path d="M12 16V8M8 12L12 8L16 12" stroke="blue" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-        `;
-    }
-    uploadVideo(playerNumber) {
-        const urlParams = new URLSearchParams(window.location.search);
-        const userId = urlParams.get('userid');
-
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = 'video/*';
-        input.onchange = async (event) => {
-            const file = event.target.files[0];
-            if (file) {
-                const url = URL.createObjectURL(file);
-                if (playerNumber === 1 && this.player1) {
-                    this.player1.src({ type: 'video/mp4', src: url });
-                    this.removeUploadMessage(this.player1);
-
-                    this.player1.on('loadeddata', async () => {
-                        console.log('Player 1 video loaded via upload');
-                        await saveToLibrary(url, userId);
-                    });
-
-                    this.player1.play();
-                }if (playerNumber === 2 && this.player2) {
-                    this.removeUploadMessage(this.player2);
-                    this.player2.src({ type: 'video/mp4', src: url });
-                    console.log("Url: ",url);
-                    this.player2.on('loadeddata', async () => {
-                        console.log('Player 2 video loaded via upload');
-                        await saveToLibrary(url, userId);
-                    });
-                    this.player2.play();
-                    // await saveToLibrary(url, userId);
-                }
-            }
-        };
-        input.click();
-    }
-    showUploadMessage(player) {
-        // Clear any existing source
-        player.src("");
-        
-        // Determine which player this is (1 or 2)
-        const playerNumber = player === this.player1 ? 1 : 2;
-        
-        // Create a div with the upload message
-        const messageDiv = document.createElement('div');
-        messageDiv.className = 'vjs-upload-message';
-        messageDiv.innerHTML = `
-            <div style="
-                position: absolute;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                display: flex;
-                flex-direction: column;
-                justify-content: center;
-                align-items: center;
-                background-color: rgba(0, 0, 0, 0.7);
-                color: white;
-                text-align: center;
-                padding: 20px;
-                z-index: 2;
-                cursor: pointer;
-            ">
-                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                    <polyline points="17 8 12 3 7 8"></polyline>
-                    <line x1="12" y1="3" x2="12" y2="15"></line>
-                </svg>
-                <h3 style="margin-top: 15px; font-size: 18px;">Please upload a video in library to start analyzing</h3>
-                <p style="margin-top: 10px; font-size: 14px;">No video found. Upload your swing to begin the analysis.</p>
-            </div>
-        `;
-        
-        // Find the player container and append the message
-        const playerEl = player.el();
-        
-        // Remove any existing message first
-        this.removeUploadMessage(player);
-        
-        playerEl.appendChild(messageDiv);
-        
-        // Add click event listener to the message div
-        messageDiv.addEventListener('click', () => {
-            this.uploadVideo(playerNumber);
-        });
-    }
-    removeUploadMessage(player) {
-        if (!player) return;
-        
-        const playerEl = player.el();
-        if (!playerEl) return;
-        
-        // Remove any existing message
-        const existingMessage = playerEl.querySelector('.vjs-upload-message');
-        if (existingMessage) {
-            existingMessage.remove();
-        }
-    }
-    
-}    
-
+  }
 // Drawing tools and canvas management
 class DrawingManager {
     constructor() {
