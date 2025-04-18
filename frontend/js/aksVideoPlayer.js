@@ -45,7 +45,8 @@
           closeLabel: "Close",
           pictureinpicture: true,
           pictureinpictureLabel: "Picture in Picture",
-          contextMenu: []
+          contextMenu: [],
+          autoHideControls: false
         },
         options
       );
@@ -929,17 +930,19 @@
             .find('[data-sources="' + settings.file[0].label + '"]')
             .addClass("aks-active");
         }
-        var timeout = null;
-        aks.find(".aks-video-player").on("mousemove", function () {
-          if (timeout !== null) {
-            aks.find(".aks-video-player").removeClass("aks-mouse");
-            clearTimeout(timeout);
-          }
-  
-          timeout = setTimeout(function () {
-            aks.find(".aks-video-player").addClass("aks-mouse");
-          }, 4000);
-        });
+        if(settings.autoHideControls === true){
+          var timeout = null;
+          aks.find(".aks-video-player").on("mousemove", function () {
+            if (timeout !== null) {
+              aks.find(".aks-video-player").removeClass("aks-mouse");
+              clearTimeout(timeout);
+            }
+    
+            timeout = setTimeout(function () {
+              aks.find(".aks-video-player").addClass("aks-mouse");
+            }, 4000);
+          });
+        }
         if (settings.ads.length) {
           $.each(settings.ads, function (i, l) {
             if (l.type === "google") {
