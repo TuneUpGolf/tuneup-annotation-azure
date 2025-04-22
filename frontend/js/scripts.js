@@ -187,6 +187,7 @@ class VideoManager {
                 const player = this;
                 self.showUploadMessage(player);
                 player.dimensions(player.currentWidth(), player.currentHeight());
+                enhanceVideoScrubbing();
             });
 
             this.videoElement2 = document.querySelector('#video-player-2');
