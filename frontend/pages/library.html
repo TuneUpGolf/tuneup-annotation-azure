@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Gallery with Load More</title>
+
+    
+
+    <link rel="stylesheet" href="../css/library.css">
+    
+</head>
+<body>
+    <header>
+        <nav>
+            <div class="logo">
+                <!-- SVG icon -->
+                <svg id="backtoindex" class="logo-icon" xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" viewBox="0 0 66.91 122.88" xml:space="preserve">
+                    <title>Back to annotations page</title>
+                    <g>
+                        <path fill="#e0e0e0" d="M64.96,111.2c2.65,2.73,2.59,7.08-0.13,9.73c-2.73,2.65-7.08,2.59-9.73-0.14L1.97,66.01l4.93-4.8l-4.95,4.8
+                        c-2.65-2.74-2.59-7.1,0.15-9.76c0.08-0.08,0.16-0.15,0.24-0.22L55.1,2.09c2.65-2.73,7-2.79,9.73-0.14
+                        c2.73,2.65,2.78,7.01,0.13,9.73L16.5,61.23L64.96,111.2L64.96,111.2L64.96,111.2z"/>
+                    </g>
+                </svg>
+                
+                <!-- Logo text -->
+                <span class="logo-text">Swing Library</span>
+            </div>
+            <form id="searchForm">
+                <input type="text" id="searchInput" placeholder="Search videos or images..." aria-label="Search">
+                <button type="submit">Search</button>
+            </form>
+        </nav>
+    </header>
+    <main>
+        <!-- <h1>Library</h1> -->
+        <div class="panel-selector">
+            <button id="videosButton" class="panel-button active">Videos</button>
+            <button id="imagesButton" class="panel-button inactive">Images</button>
+            <button id="recordingsButton" class="panel-button inactive">Recordings</button>
+            
+        </div>
+        <div id="progress-bar" style="width: 100%; background-color: #f3f3f3; border: 1px solid #ccc; margin-top: 10px; display:none;">
+
+            <div id="progress" style="width: 0%; height: 5px; background-color: #2196F3;"></div>
+
+        </div>
+       
+        <div id="videosPanel" class="panel active">
+            <input type="file" id="fileInput" accept="video/*">
+            <a href="#" class="load-more" id="loadMore">Upload Video</a>
+            <div class="gallery" id="gallery"></div>
+           
+        </div>
+        <div id="imagesPanel" class="panel">
+            <input type="file" id="imageFileInput" accept="image/*">
+            <a href="#" class="load-more" id="loadMoreImages">Upload Image</a>
+            <div class="gallery" id="imageGallery"></div>
+            
+        </div>
+        <div id="recordingsPanel" class="panel">
+            
+            <div id="recordings-gallery" class="recordings-gallery"><div id="message-container"></div>
+        </div>
+                
+        </div>
+        <!-- <div class="gallery" id="gallery"></div>
+        <input type="file" id="fileInput" accept="video/*">
+        <a href="#" class="load-more" id="loadMore">Upload Video</a> -->
+    </main>
+        <script src="../config.js"></script>
+
+        <!-- <script src="js/api.js"></script>   -->
+
+       
+        <script src="../js/library.js"></script>
+      <script>
+        const videosButton = document.getElementById('videosButton');
+        const imagesButton = document.getElementById('imagesButton');
+        const videosPanel = document.getElementById('videosPanel');
+        const imagesPanel = document.getElementById('imagesPanel');
+        const recordingsPanel = document.getElementById('recordingsPanel');
+        const recordingsButton = document.getElementById('recordingsButton');
+
+        videosButton.addEventListener('click', () => {
+            videosButton.classList.add('active');
+            videosButton.classList.remove('inactive');
+            imagesButton.classList.add('inactive');
+            imagesButton.classList.remove('active');
+            videosPanel.classList.add('active');
+            imagesPanel.classList.remove('active');
+            recordingsButton.classList.remove('active');
+            recordingsPanel.classList.remove('active');
+
+        });
+
+        imagesButton.addEventListener('click', () => {
+            imagesButton.classList.add('active');
+            imagesButton.classList.remove('inactive');
+            videosButton.classList.add('inactive');
+            videosButton.classList.remove('active');
+            imagesPanel.classList.add('active');
+            videosPanel.classList.remove('active');
+            recordingsButton.classList.remove('active');
+            recordingsPanel.classList.remove('active');
+        });
+
+        recordingsButton.addEventListener('click', () => {
+            imagesButton.classList.remove('active');
+           // imagesButton.classList.remove('inactive');
+            videosButton.classList.add('inactive');
+            videosButton.classList.remove('active');
+            imagesPanel.classList.add('inactive');
+            imagesPanel.classList.remove('active');
+            videosPanel.classList.remove('active');
+            recordingsButton.classList.remove('inactive');
+            recordingsButton.classList.add('active');
+            recordingsPanel.classList.add('active');
+        });
+
+
+        searchForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+            const query = searchInput.value.toLowerCase();
+            
+           
+            if (videosPanel.classList.contains('active')) {
+                searchVideos(query);
+            } else if (imagesPanel.classList.contains('active')) {
+                searchImages(query);
+            }
+        });
+
+        
+        function searchVideos(query) {
+            const videoCards = gallery.querySelectorAll('.card');
+            videoCards.forEach(card => {
+                const videoTitle = card.querySelector('h3').textContent.toLowerCase();
+                if (videoTitle.includes(query)) {
+                    card.style.display = 'block'; 
+                } else {
+                    card.style.display = 'none'; 
+                }
+            });
+        }
+
+       
+        function searchImages(query) {
+            const imageCards = imageGallery.querySelectorAll('.card');
+            imageCards.forEach(card => {
+                const imageTitle = card.querySelector('h3').textContent.toLowerCase();
+                if (imageTitle.includes(query)) {
+                    card.style.display = 'block'; 
+                } else {
+                    card.style.display = 'none'; 
+                }
+            });
+        }
+    </script>
+</body>
+</html>
