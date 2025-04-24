@@ -1551,6 +1551,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 function enhanceVideoScrubbing() {
+
+    const isAppleDevice = /Mac|iPhone|iPad|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+    if(!isAppleDevice) {
+        return true;
+    }
+
     const videoPlayer = document.querySelector('video');
     const progressHolder = document.querySelector('.vjs-progress-holder');
     const playerContainer = document.querySelector('.video-js');
