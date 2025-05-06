@@ -132,6 +132,7 @@ class VideoManager {
                     self.showUploadMessage(player);
                 }
                 
+                enhanceVideoScrubbing();
     
                 player.dimensions(player.currentWidth(), player.currentHeight());
             }catch (error) {
@@ -186,6 +187,7 @@ class VideoManager {
                 const player = this;
                 self.showUploadMessage(player);
                 player.dimensions(player.currentWidth(), player.currentHeight());
+                enhanceVideoScrubbing();
             });
 
             this.videoElement2 = document.querySelector('#video-player-2');
@@ -1547,3 +1549,100 @@ document.addEventListener('DOMContentLoaded', async () => {
     await loadFont('Poppins');
     const app = new DrawingApp();
 });
+
+function enhanceVideoScrubbing() {
+
+    const isAppleDevice = /Mac|iPhone|iPad|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+    if(!isAppleDevice) {
+        return true;
+    }
+
+    const videoPlayer = document.querySelector('video');
+    const progressHolder = document.querySelector('.vjs-progress-holder');
+    const playerContainer = document.querySelector('.video-js');
+  
+    if (!videoPlayer || !progressHolder || !playerContainer) {
+      setTimeout(enhanceVideoScrubbing, 100);
+      return;
+    }
+  
+    console.log('Video player elements found, enhancing scrubbing...');
+  
+    let isScrubbing = false;
+    let wasPlaying = false;
+  
+    function calculatePositionPercentage(event, element) {
+      const bounds = element.getBoundingClientRect();
+      const clientX = event.touches ? event.touches[0].clientX : event.clientX;
+      return Math.max(0, Math.min(1, (clientX - bounds.left) / bounds.width));
+    }
+  
+    function updateVideoTime(percentage) {
+      if (!videoPlayer.duration) return;
+      const newTime = percentage * videoPlayer.duration;
+  
+      // Use fastSeek when possible for keyframe-based jump
+      if (videoPlayer.fastSeek && Math.abs(videoPlayer.currentTime - newTime) > 0.3) {
+        videoPlayer.fastSeek(newTime);
+      } else {
+        videoPlayer.currentTime = newTime;
+      }
+  
+      // Dispatch timeupdate for UI sync
+      videoPlayer.dispatchEvent(new Event('timeupdate'));
+    }
+  
+    function handleScrubMove(e) {
+      if (!isScrubbing) return;
+      e.preventDefault();
+      const percentage = calculatePositionPercentage(e, progressHolder);
+      updateVideoTime(percentage);
+    }
+  
+    function startScrubbing(e) {
+      wasPlaying = !videoPlayer.paused;
+      isScrubbing = true;
+      videoPlayer.pause();
+      handleScrubMove(e);
+      document.body.style.cursor = 'grabbing';
+    }
+  
+    function endScrubbing(e) {
+      if (!isScrubbing) return;
+      isScrubbing = false;
+      if (wasPlaying) videoPlayer.play();
+      document.body.style.cursor = '';
+    }
+  
+    // More responsive pointer/touch handling
+    progressHolder.addEventListener('touchstart', startScrubbing, { passive: false });
+    progressHolder.addEventListener('touchmove', handleScrubMove, { passive: false });
+    progressHolder.addEventListener('touchend', endScrubbing);
+  
+    progressHolder.addEventListener('mousedown', startScrubbing);
+    document.addEventListener('mousemove', handleScrubMove);
+    document.addEventListener('mouseup', endScrubbing);
+  
+    // iOS-specific settings
+    if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+      videoPlayer.removeAttribute('controls');
+      videoPlayer.playsInline = true;
+      videoPlayer.webkitPlaysInline = true;
+      videoPlayer.setAttribute('preload', 'auto');
+      videoPlayer.style.transform = 'translateZ(0)';
+      playerContainer.style.willChange = 'transform';
+    }
+  
+    // Reduce latency on seeked event
+    videoPlayer.addEventListener('seeked', () => {
+      if (videoPlayer.hls?.startLoad) {
+        videoPlayer.hls.startLoad();
+      }
+    });
+  
+    const loadingSpinner = document.querySelector('.vjs-loading-spinner');
+    if (loadingSpinner) loadingSpinner.style.display = 'none';
+  }
+  
+  
