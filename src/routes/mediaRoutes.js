@@ -9,7 +9,7 @@ const router = express.Router();
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
 
-    cb(null, './../frontend/uploads/');
+    cb(null, 'frontend/uploads/');
 
   },
   filename: function (req, file, cb) {
@@ -24,16 +24,16 @@ router.post('/upload/:userId', upload.single('file'), controller.addMedia);
 
 router.get('/getmediafiles', (req, res, next) => {
   console.log("Request made to /getmediafiles");
-  next(); 
+  next();
 }, controller.getMediaFiles);
 
 router.get('/getall', controller.getAllMedia);
 router.get('/getmediabyid/:id', controller.getMediaById);
 // router.delete('/:id', controller.deleteMedia);
-router.put('/update/:id', (req,res,next) =>{
+router.put('/update/:id', (req, res, next) => {
   console.log("Request made to /update/:id");
-  next(); 
-},controller.updateMedia);
+  next();
+}, controller.updateMedia);
 router.delete('/delete/:id', controller.deleteMedia);
 router.get('/mediabyuser/:userId', controller.getMediaByUserId);
 
