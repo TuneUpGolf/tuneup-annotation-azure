@@ -497,7 +497,7 @@ function deleteMedia(mediaId, videoCard) {
     console.log("Media id:",mediaId);
     // Send DELETE request to the backend
     fetch(`${apiUrl}/delete/${mediaId}`, {
-      method: 'DELETE',
+      method: 'POST',
     })
       .then((response) => response.json())
       .then((data) => {
