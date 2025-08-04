@@ -1,4 +1,3 @@
-
 * {
     margin: 0;
     padding: 0;
@@ -208,6 +207,7 @@ body {
     justify-content: center;
     border-radius: 4px;
 }
+
 /* Floating Upload Icon */
 .floating-upload-icon {
     position: absolute;
@@ -216,7 +216,8 @@ body {
     cursor: pointer;
     transition: transform 0.2s ease-in-out;
     z-index: 1000;
-    background-color: none; /* Temporary to check visibility */
+    background-color: none;
+    /* Temporary to check visibility */
     padding: 5px;
     border-radius: 50%;
 }
@@ -294,9 +295,10 @@ body {
         width: 28px;
         height: 28px;
     }
-    #recordButton {
+
+    /* #recordButton {
         display: none;
-    }
+    } */
 }
 
 .desktop-only {
