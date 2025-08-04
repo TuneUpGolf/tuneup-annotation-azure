@@ -34,7 +34,7 @@ router.put('/update/:id', (req,res,next) =>{
   console.log("Request made to /update/:id");
   next(); 
 },controller.updateMedia);
-router.delete('/delete/:id', controller.deleteMedia);
+router.post('/delete/:id', controller.deleteMedia);
 router.get('/mediabyuser/:userId', controller.getMediaByUserId);
 
 
