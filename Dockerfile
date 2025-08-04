@@ -12,7 +12,6 @@ RUN cd src && npm install
 
 # Copy the rest of the backend code
 COPY src/ ./src/
-
 # Copy the frontend package.json and package-lock.json
 COPY package.json package-lock.json ./
 

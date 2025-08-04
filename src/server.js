@@ -24,7 +24,21 @@ const recordingsFolder = path.join(process.cwd(), 'recordings');
 //   origin: process.env.CORS_ORIGIN || '*',
 //   credentials: true
 // }));
-app.use(cors());
+
+const corsOptions = {
+  origin: "https://annotation.tuneup.golf",
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+};
+
+// Apply CORS globally
+app.use(cors(corsOptions));
+
+// Ensure preflight requests are handled with the same options
+app.options('*', cors(corsOptions));
+
+//app.use(cors());
 app.use(express.static(path.join(__dirname, '../frontend'), {
   etag: true,          // Enable ETag generation (enabled by default)
   maxAge: '1d'         // Cache files for 1 day (adjust as needed)
