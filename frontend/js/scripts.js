@@ -748,6 +748,7 @@ class DrawingManager {
   }
 
   addShape(shapeType, e, options = {}) {
+    console.log("h TEST");
     let shape;
     const pointer = e ? this.canvas.getPointer(e.e) : { x: 100, y: 100 };
     const defaultOptions = {
