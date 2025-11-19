@@ -394,6 +394,7 @@ class DrawingManager {
     this.state = AppState.getInstance();
     this.initializeEventListeners();
     this.initializeDebugListeners();
+    this.setupClickThrough();
   }
 
   initializeEventListeners() {
@@ -752,112 +753,161 @@ class DrawingManager {
     let shape;
     const pointer = e ? this.canvas.getPointer(e.e) : { x: 100, y: 100 };
     const defaultOptions = {
-      fontFamily: "Poppins",
-      left: pointer.x,
-      top: pointer.y,
-      fill: "transparent",
-      stroke: this.state.currentColor,
-      strokeWidth: 2,
+        fontFamily: "Poppins",
+        left: pointer.x,
+        top: pointer.y,
+        fill: "transparent",
+        stroke: this.state.currentColor,
+        strokeWidth: 2,
+        selectable: true, // Make it selectable by default
+        hasControls: true, // Enable controls for resizing
     };
 
     const finalOptions = { ...defaultOptions, ...options };
 
     switch (shapeType) {
-      case "rectangle":
-        shape = new fabric.Rect({
-          ...finalOptions,
-          width: 100,
-          height: 100,
-        });
-        break;
-      case "circle":
-        shape = new fabric.Circle({
-          ...finalOptions,
-          radius: 50,
-        });
-        break;
-      case "triangle":
-        shape = new fabric.Triangle({
-          ...finalOptions,
-          width: 100,
-          height: 100,
-        });
-        break;
-      case "line":
-        shape = new fabric.Line(
-          [pointer.x, pointer.y, pointer.x + 100, pointer.y + 100],
-          {
-            stroke: this.state.currentColor,
-            strokeWidth: 2,
-          }
-        );
-        break;
-      case "text":
-        shape = new fabric.IText("Type here", {
-          ...finalOptions,
-          fontFamily: "Poppins",
-          fontWeight: "14",
-          fontSize: 17,
-          fill: this.state.currentColor,
-        });
-
-        break;
-      case "image":
-        // Add image to the canvas
-        fabric.Image.fromURL(options.src, (img) => {
-          img.set({
-            left: pointer.x,
-            top: pointer.y,
-            scaleX: 0.5,
-            scaleY: 0.5,
-          });
-          this.canvas.add(img);
-          this.canvas.setActiveObject(img);
-          this.canvas.renderAll();
-        });
-        break;
+        case "rectangle":
+            shape = new fabric.Rect({
+                ...finalOptions,
+                width: 100,
+                height: 100,
+            });
+            break;
+        case "circle":
+            shape = new fabric.Circle({
+                ...finalOptions,
+                radius: 50,
+            });
+            break;
+        case "triangle":
+            shape = new fabric.Triangle({
+                ...finalOptions,
+                width: 100,
+                height: 100,
+            });
+            break;
+        case "line":
+            shape = new fabric.Line(
+                [pointer.x, pointer.y, pointer.x + 100, pointer.y + 100],
+                {
+                    stroke: this.state.currentColor,
+                    strokeWidth: 2,
+                    selectable: true,
+                    hasControls: true,
+                }
+            );
+            break;
+        case "text":
+            shape = new fabric.IText("Type here", {
+                ...finalOptions,
+                fontFamily: "Poppins",
+                fontWeight: "14",
+                fontSize: 17,
+                fill: this.state.currentColor,
+                editable: true, // Make text editable
+            });
+            break;
+        case "image":
+            // Add image to the canvas
+            fabric.Image.fromURL(options.src, (img) => {
+                img.set({
+                    left: pointer.x,
+                    top: pointer.y,
+                    scaleX: 0.5,
+                    scaleY: 0.5,
+                    selectable: true,
+                    hasControls: true,
+                });
+                this.canvas.add(img);
+                this.canvas.setActiveObject(img);
+                this.canvas.renderAll();
+            });
+            return; // Return early for images
     }
 
     if (shape) {
-      this.canvas.add(shape);
-      this.canvas.setActiveObject(shape);
-      this.canvas.renderAll();
-          this.disableActiveTool();
-
+        this.canvas.add(shape);
+        this.canvas.setActiveObject(shape);
+        this.canvas.renderAll();
+        
+        // DON'T disable the tool - keep it active for multiple placements
+        // this.disableActiveTool();
+        
+        // Enable edit mode for the newly created shape
+        this.enableShapeEditing(shape);
     }
-  }
-
-  // Add this method to disable the active tool
-disableActiveTool() {
-    const tools = document.querySelectorAll('.toolbar .tool-btn');
-    const canvasContainer = this.canvas.wrapperEl;
-    const upperCanvas = this.canvas.upperCanvasEl;
-    
-    // Remove active class from all tools
-    tools.forEach(tool => tool.classList.remove('active'));
-    
-    // // Remove drawing mode styles
-    // canvasContainer.classList.remove('drawing-mode');
-    // upperCanvas.classList.remove('drawing-mode');
-    // upperCanvas.style.cursor = 'default';
-    
-    // // Disable drawing and cleanup events
-    // this.disableDrawing();
-    // this.cleanupToolEvents();
 }
 
-  disableDrawing() {
+// Add this new method to enable shape editing
+enableShapeEditing(shape) {
+    shape.set({
+        selectable: true,
+        hasControls: true,
+        hasBorders: true,
+        lockRotation: false,
+        lockScalingX: false,
+        lockScalingY: false,
+    });
+    
+    // Enable controls for the shape
+    shape.setControlsVisibility({
+        mt: true, // middle top
+        mb: true, // middle bottom
+        ml: true, // middle left
+        mr: true, // middle right
+        bl: true, // bottom left
+        br: true, // bottom right
+        tl: true, // top left
+        tr: true, // top right
+        mtr: true, // rotate
+    });
+    
+    this.canvas.setActiveObject(shape);
+    this.canvas.renderAll();
+}
+
+  // Add this method to disable the active tool
+  // Add this method to disable the active tool
+  disableActiveTool() {
+    const tools = document.querySelectorAll(".toolbar .tool-btn");
+    const canvasContainer = this.canvas.wrapperEl;
+    const upperCanvas = this.canvas.upperCanvasEl;
+
+    // Remove active class from all tools
+    tools.forEach((tool) => tool.classList.remove("active"));
+
+    // Remove drawing mode styles
+    canvasContainer.classList.remove("drawing-mode");
+    upperCanvas.classList.remove("drawing-mode");
+    upperCanvas.style.cursor = "default";
+
+    // Enable click-through for video controls
+    this.enableClickThrough();
+
+    // Disable drawing and cleanup events
+    this.disableDrawing();
+    this.cleanupToolEvents();
+  }
+
+ disableDrawing() {
     this.state.eraserMode = false;
     this.state.isDrawing = false;
     this.state.lastX = 0;
     this.state.lastY = 0;
     this.state.startPoint = null;
     this.canvas.isDrawingMode = false;
-    this.canvas.selection = true;
+    this.canvas.selection = true; // Keep selection enabled for shape editing
     this.canvas.hoverCursor = "default";
     this.canvas.defaultCursor = "default";
     this.cleanupToolEvents();
-  }
+    
+    // But keep objects editable
+    this.canvas.getObjects().forEach(obj => {
+        if (obj instanceof fabric.IText) {
+            obj.editable = false; // Disable text editing when tool is disabled
+        }
+    });
+}
 
   cleanupToolEvents() {
     this.state.eraserMode = false;
@@ -878,9 +928,80 @@ disableActiveTool() {
     this.canvas.off("object:modified");
 
     this.canvas.isDrawingMode = false;
-    this.canvas.selection = false;
+    this.canvas.selection = true;
     this.canvas.hoverCursor = "default";
     this.canvas.defaultCursor = "default";
+  }
+
+  setupClickThrough() {
+    // Allow clicks to pass through to video when not in drawing mode
+    this.canvas.on("mouse:down", (options) => {
+      const target = options.target;
+
+      // If no object is clicked and we're not in active drawing mode,
+      // let the event pass through to the video
+      if (
+        !target &&
+        !this.canvas.isDrawingMode &&
+        !this.state.eraserMode &&
+        !this.state.editMode &&
+        this.state.currentTool === null
+      ) {
+        // Simulate click on video element
+        this.passClickToVideo(options.e);
+        return;
+      }
+    });
+
+    // Also handle mouse up to ensure video controls work
+    this.canvas.on("mouse:up", (options) => {
+      if (
+        !options.target &&
+        !this.canvas.isDrawingMode &&
+        !this.state.eraserMode &&
+        !this.state.editMode
+      ) {
+        this.passClickToVideo(options.e);
+      }
+    });
+  }
+
+  passClickToVideo(originalEvent) {
+    // Find the video element underneath
+    const videoElement = document.querySelector("video");
+    if (!videoElement) return;
+
+    // Create a new click event at the same coordinates
+    const rect = videoElement.getBoundingClientRect();
+    const clickEvent = new MouseEvent("click", {
+      clientX: originalEvent.clientX,
+      clientY: originalEvent.clientY,
+      bubbles: true,
+      cancelable: true,
+    });
+
+    // Dispatch the event to the video element
+    videoElement.dispatchEvent(clickEvent);
+
+    // Also try the video.js control bar
+    const controlBar = document.querySelector(".vjs-control-bar");
+    if (controlBar) {
+      controlBar.dispatchEvent(clickEvent);
+    }
+  }
+
+  enableClickThrough() {
+    const upperCanvas = this.canvas.upperCanvasEl;
+    if (upperCanvas) {
+      upperCanvas.style.pointerEvents = "none";
+    }
+  }
+
+  disableClickThrough() {
+    const upperCanvas = this.canvas.upperCanvasEl;
+    if (upperCanvas) {
+      upperCanvas.style.pointerEvents = "auto";
+    }
   }
 
   saveState() {
@@ -1332,6 +1453,8 @@ class DrawingApp {
       canvasContainer.classList.remove("drawing-mode");
       upperCanvas.classList.remove("drawing-mode");
       upperCanvas.style.cursor = "default";
+      // Enable click-through when tool is deactivated
+      this.drawingManager.enableClickThrough();
     } else {
       tools.forEach((t) => t.classList.remove("active"));
       toolElement.classList.add("active");
@@ -1340,33 +1463,33 @@ class DrawingApp {
       upperCanvas.classList.add("drawing-mode");
       upperCanvas.style.cursor = "crosshair";
 
+      // Disable click-through when tool is activated
+      this.drawingManager.disableClickThrough();
+
       const toolName = toolElement.classList[1];
       this.activateTool(toolName);
     }
+
     if (
       toolElement.classList.contains("fullscreen") &&
       document.fullscreenElement
     ) {
       document.exitFullscreen();
     }
-    // Listen for Fullscreen Exit
-    document.addEventListener("fullscreenchange", () => {
-      const fullscreenBtn = document.querySelector(".tool-btn.fullscreen");
-      if (!document.fullscreenElement && fullscreenBtn) {
-        fullscreenBtn.classList.remove("active");
-      }
-    });
   }
 
   activateTool(toolName) {
+    // Disable click-through when using tools
+    this.drawingManager.disableClickThrough();
+    
     // First disable edit mode if it's active
     if (this.state.editMode) {
-      const editModeBtn = document.querySelector(".secondary-btn.edit-mode");
-      if (editModeBtn) {
-        editModeBtn.classList.remove("active");
-      }
-      this.drawingManager.disableEditMode();
-      this.state.editMode = false;
+        const editModeBtn = document.querySelector(".secondary-btn.edit-mode");
+        if (editModeBtn) {
+            editModeBtn.classList.remove("active");
+        }
+        this.drawingManager.disableEditMode();
+        this.state.editMode = false;
     }
 
     this.drawingManager.disableDrawing();
@@ -1381,31 +1504,41 @@ class DrawingApp {
     this.drawingManager.canvas.off("object:rotating");
 
     switch (toolName) {
-      case "draw":
-        this.drawingManager.initializeFreeDrawing();
-        break;
-      case "eraser":
-        this.drawingManager.initializeEraser();
-        break;
-      case "polyline":
-        this.drawingManager.initializePolyline();
-        break;
-      case "rectangle":
-      case "circle":
-      case "triangle":
-      case "line":
-      case "text":
-        this.drawingManager.canvas.once("mouse:down", (e) =>
-          this.drawingManager.addShape(toolName, e)
-        );
-        break;
-      case "image":
-        this.drawingManager.initializeShape();
-        break;
-      case "fullscreen":
-        this.drawingManager.toggleFullScreen();
+        case "draw":
+            this.drawingManager.initializeFreeDrawing();
+            break;
+        case "eraser":
+            this.drawingManager.initializeEraser();
+            break;
+        case "polyline":
+            this.drawingManager.initializePolyline();
+            break;
+        case "rectangle":
+        case "circle":
+        case "triangle":
+        case "line":
+        case "text":
+            // Set up continuous click listener for shapes (not one-time)
+            this.drawingManager.canvas.on("mouse:down", (e) => {
+                // Only create shape if we're not interacting with existing objects
+                if (!e.target) {
+                    this.drawingManager.addShape(toolName, e);
+                }
+            });
+            break;
+        case "image":
+            this.drawingManager.initializeShape();
+            break;
+        case "fullscreen":
+            this.drawingManager.toggleFullScreen();
+            // Re-enable the tool after fullscreen
+            const fullscreenBtn = document.querySelector('.tool-btn.fullscreen');
+            if (fullscreenBtn) {
+                fullscreenBtn.classList.remove('active');
+            }
+            break;
     }
-  }
+}
 
   handleColorPicker() {
     console.log("Inside handle picker.");
