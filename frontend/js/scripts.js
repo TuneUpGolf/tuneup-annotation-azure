@@ -94,12 +94,12 @@ class VideoManager {
           autoHide: false,
           pictureInPictureToggle: false,
           // playbackRateMenuButton: true, // Add this line
-          playbackRateMenuButton: {
-            // Add playback rate options
-            playbackRates: [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2],
-            // Customize the button appearance
-            className: "vjs-playback-rate",
-          },
+          // playbackRateMenuButton: {
+          //   // Add playback rate options
+          //   playbackRates: [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2],
+          //   // Customize the button appearance
+          //   className: "vjs-playback-rate",
+          // },
         },
         userActions: { hotkeys: true },
         html5: {
@@ -195,10 +195,10 @@ self.initializePlaybackRateControls();
             remainingTimeDisplay: false,
             autoHide: false,
             pictureInPictureToggle: false,
-            playbackRateMenuButton: {
-              playbackRates: [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2],
-              className: "vjs-playback-rate",
-            },
+            // playbackRateMenuButton: {
+            //   playbackRates: [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2],
+            //   className: "vjs-playback-rate",
+            // },
           },
           userActions: { hotkeys: true },
           html5: {
