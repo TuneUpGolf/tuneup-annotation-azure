@@ -213,6 +213,8 @@ self.initializePlaybackRateControls();
           self.showUploadMessage(player);
           player.dimensions(player.currentWidth(), player.currentHeight());
           enhanceVideoScrubbing();
+
+          self.setupPlaybackRateControl(player, "player2");
         }
       );
 
