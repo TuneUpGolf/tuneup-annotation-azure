@@ -72,6 +72,11 @@ class VideoManager {
     }
     const self = this;
 
+    // const self = this;
+    // this.player1.ready(function() {
+    //   self.initializePlaybackRateControls();
+    // });
+
     this.player1 = videojs(
       "video-player-1",
       {
@@ -88,6 +93,13 @@ class VideoManager {
           remainingTimeDisplay: false,
           autoHide: false,
           pictureInPictureToggle: false,
+          // playbackRateMenuButton: true, // Add this line
+          playbackRateMenuButton: {
+            // Add playback rate options
+            playbackRates: [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2],
+            // Customize the button appearance
+            className: "vjs-playback-rate",
+          },
         },
         userActions: { hotkeys: true },
         html5: {
@@ -135,7 +147,7 @@ class VideoManager {
             // Default video source
             self.showUploadMessage(player);
           }
-
+self.initializePlaybackRateControls();
           enhanceVideoScrubbing();
 
           player.dimensions(player.currentWidth(), player.currentHeight());
@@ -145,6 +157,8 @@ class VideoManager {
         }
       }
     );
+
+    
   }
 
   loadImage(imageSrc) {
@@ -181,6 +195,10 @@ class VideoManager {
             remainingTimeDisplay: false,
             autoHide: false,
             pictureInPictureToggle: false,
+            playbackRateMenuButton: {
+              playbackRates: [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2],
+              className: "vjs-playback-rate",
+            },
           },
           userActions: { hotkeys: true },
           html5: {
@@ -199,6 +217,88 @@ class VideoManager {
       );
 
       this.videoElement2 = document.querySelector("#video-player-2");
+    }
+  }
+
+  initializePlaybackRateControls() {
+    // For player 1
+    this.setupPlaybackRateControl(this.player1, "player1");
+
+    // For player 2 if it exists
+    if (this.player2) {
+      this.setupPlaybackRateControl(this.player2, "player2");
+    }
+  }
+
+  setupPlaybackRateControl(player, playerId) {
+    if (!player) return;
+
+    // Create custom playback rate button
+    const playbackRateButton = document.createElement("button");
+    playbackRateButton.className = "vjs-playback-rate vjs-control vjs-button";
+    playbackRateButton.innerHTML = "1x";
+    playbackRateButton.title = "Playback Rate";
+
+    // Create dropdown menu
+    const dropdown = document.createElement("div");
+    dropdown.className = "vjs-playback-rate-menu vjs-menu";
+    dropdown.innerHTML = `
+      <ul class="vjs-menu-content">
+        <li class="vjs-menu-item" data-rate="0.25">0.25x</li>
+        <li class="vjs-menu-item" data-rate="0.5">0.5x</li>
+        <li class="vjs-menu-item" data-rate="0.75">0.75x</li>
+        <li class="vjs-menu-item vjs-selected" data-rate="1">1x</li>
+        <li class="vjs-menu-item" data-rate="1.25">1.25x</li>
+        <li class="vjs-menu-item" data-rate="1.5">1.5x</li>
+        <li class="vjs-menu-item" data-rate="1.75">1.75x</li>
+        <li class="vjs-menu-item" data-rate="2">2x</li>
+      </ul>
+    `;
+
+    // Find the control bar and insert before the fullscreen button
+    const controlBar = player.el().querySelector(".vjs-control-bar");
+    const fullscreenButton = player
+      .el()
+      .querySelector(".vjs-fullscreen-control");
+
+    if (controlBar && fullscreenButton) {
+      controlBar.insertBefore(playbackRateButton, fullscreenButton);
+      controlBar.appendChild(dropdown);
+
+      // Add click event to toggle dropdown
+      playbackRateButton.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const isActive = dropdown.classList.contains("vjs-lock-showing");
+        document.querySelectorAll(".vjs-playback-rate-menu").forEach((menu) => {
+          menu.classList.remove("vjs-lock-showing");
+        });
+        if (!isActive) {
+          dropdown.classList.add("vjs-lock-showing");
+        }
+      });
+
+      // Add click events to rate options
+      dropdown.querySelectorAll(".vjs-menu-item").forEach((item) => {
+        item.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const rate = parseFloat(item.getAttribute("data-rate"));
+          player.playbackRate(rate);
+          playbackRateButton.innerHTML = rate + "x";
+
+          // Update selected state
+          dropdown.querySelectorAll(".vjs-menu-item").forEach((i) => {
+            i.classList.remove("vjs-selected");
+          });
+          item.classList.add("vjs-selected");
+
+          dropdown.classList.remove("vjs-lock-showing");
+        });
+      });
+
+      // Close dropdown when clicking outside
+      document.addEventListener("click", () => {
+        dropdown.classList.remove("vjs-lock-showing");
+      });
     }
   }
 
@@ -397,7 +497,7 @@ class DrawingManager {
     this.setupClickThrough();
   }
 
- initializeEventListeners() {
+  initializeEventListeners() {
     this.canvas.on("object:added", () => this.saveState());
     this.canvas.on("object:modified", () => this.saveState());
     this.canvas.on("object:removed", () => this.saveState());
@@ -526,7 +626,7 @@ class DrawingManager {
     });
   }
 
- initializeEditMode() {
+  initializeEditMode() {
     this.disableDrawing();
     const canvasContainer = this.canvas.wrapperEl;
     const upperCanvas = this.canvas.upperCanvasEl;
@@ -768,7 +868,7 @@ class DrawingManager {
     // }
   }
 
-addShape(shapeType, e, options = {}) {
+  addShape(shapeType, e, options = {}) {
     console.log("h TEST");
     let shape;
     const pointer = e ? this.canvas.getPointer(e.e) : { x: 100, y: 100 };
@@ -860,23 +960,23 @@ addShape(shapeType, e, options = {}) {
   // Add this new method to activate edit mode after shape placement
   activateEditModeAfterShape() {
     console.log("Activating edit mode after shape placement");
-    
+
     // Deactivate all tool buttons
-    const tools = document.querySelectorAll('.toolbar .tool-btn');
-    tools.forEach(tool => tool.classList.remove('active'));
-    
+    const tools = document.querySelectorAll(".toolbar .tool-btn");
+    tools.forEach((tool) => tool.classList.remove("active"));
+
     // Activate the edit mode button
-    const editModeBtn = document.querySelector('.secondary-btn.edit-mode');
+    const editModeBtn = document.querySelector(".secondary-btn.edit-mode");
     if (editModeBtn) {
-      editModeBtn.classList.add('active');
+      editModeBtn.classList.add("active");
     }
-    
+
     // Set edit mode state
     this.state.editMode = true;
-    
+
     // Initialize edit mode for all objects
     this.initializeEditMode();
-    
+
     // Enable click-through for video controls
     this.enableClickThrough();
   }
@@ -974,10 +1074,10 @@ addShape(shapeType, e, options = {}) {
     this.canvas.off("object:modified");
 
     this.canvas.isDrawingMode = false;
-    
+
     // Keep selection enabled if in edit mode
     this.canvas.selection = this.state.editMode ? true : false;
-    
+
     this.canvas.hoverCursor = "default";
     this.canvas.defaultCursor = "default";
   }
@@ -1111,6 +1211,9 @@ class DrawingApp {
     this.drawingManager.updateDimensions(); // Initial update
     this.drawingManager.saveState(); // Save initial state
 
+     setTimeout(() => {
+      this.videoManager.initializePlaybackRateControls();
+    }, 1000);
     // Video event listener for dimensions
     if (this.videoManager.player1) {
       this.videoManager.player1.on("loadedmetadata", () => {
@@ -1527,6 +1630,96 @@ class DrawingApp {
     }
   }
 
+  showPlaybackSpeedMenu() {
+  const playbackRates = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
+  
+  // Remove existing menu if any
+  const existingMenu = document.querySelector('.playback-speed-menu');
+  if (existingMenu) {
+    existingMenu.remove();
+    return;
+  }
+
+  // Create menu
+  const menu = document.createElement('div');
+  menu.className = 'playback-speed-menu';
+  menu.innerHTML = `
+    <div class="playback-speed-options">
+      ${playbackRates.map(rate => `
+        <button class="speed-option ${rate === 1 ? 'active' : ''}" data-rate="${rate}">
+          ${rate}x
+        </button>
+      `).join('')}
+    </div>
+  `;
+
+  // Style the menu
+  menu.style.cssText = `
+    position: fixed;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: white;
+    border-radius: 8px;
+    padding: 10px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    z-index: 1000;
+  `;
+
+  menu.querySelector('.playback-speed-options').style.cssText = `
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 5px;
+  `;
+
+  menu.querySelectorAll('.speed-option').forEach(option => {
+    option.style.cssText = `
+      padding: 8px 12px;
+      border: none;
+      border-radius: 4px;
+      background: #f5f5f5;
+      cursor: pointer;
+      font-size: 14px;
+    `;
+    
+    option.addEventListener('click', (e) => {
+      const rate = parseFloat(e.target.getAttribute('data-rate'));
+      this.setPlaybackRate(rate);
+      menu.remove();
+    });
+  });
+
+  document.body.appendChild(menu);
+
+  // Close menu when clicking outside
+  setTimeout(() => {
+    document.addEventListener('click', function closeMenu(e) {
+      if (!menu.contains(e.target) && !e.target.closest('.playback-speed')) {
+        menu.remove();
+        document.removeEventListener('click', closeMenu);
+      }
+    });
+  }, 0);
+}
+
+setPlaybackRate(rate) {
+  if (this.videoManager.player1) {
+    this.videoManager.player1.playbackRate(rate);
+  }
+  if (this.videoManager.player2) {
+    this.videoManager.player2.playbackRate(rate);
+  }
+  
+  // Update button text if you want to show current speed
+  const playbackBtn = document.querySelector('.tool-btn.playback-speed');
+  if (playbackBtn) {
+    const text = playbackBtn.querySelector('text');
+    if (text) {
+      text.textContent = rate + 'x';
+    }
+  }
+}
+
   activateTool(toolName) {
     // Disable click-through when using tools
     this.drawingManager.disableClickThrough();
@@ -1553,6 +1746,14 @@ class DrawingApp {
     this.drawingManager.canvas.off("object:rotating");
 
     switch (toolName) {
+      case "playback-speed":
+      this.showPlaybackSpeedMenu();
+      // Deactivate the button after showing menu
+      const playbackBtn = document.querySelector('.tool-btn.playback-speed');
+      if (playbackBtn) {
+        playbackBtn.classList.remove('active');
+      }
+      break;
       case "draw":
         this.drawingManager.initializeFreeDrawing();
         break;
