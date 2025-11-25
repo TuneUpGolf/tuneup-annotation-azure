@@ -1211,9 +1211,9 @@ class DrawingApp {
     this.drawingManager.updateDimensions(); // Initial update
     this.drawingManager.saveState(); // Save initial state
 
-     setTimeout(() => {
-      this.videoManager.initializePlaybackRateControls();
-    }, 1000);
+    //  setTimeout(() => {
+    //   this.videoManager.initializePlaybackRateControls();
+    // }, 1000);
     // Video event listener for dimensions
     if (this.videoManager.player1) {
       this.videoManager.player1.on("loadedmetadata", () => {
