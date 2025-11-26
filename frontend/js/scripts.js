@@ -147,7 +147,7 @@ class VideoManager {
             // Default video source
             self.showUploadMessage(player);
           }
-self.initializePlaybackRateControls();
+          self.initializePlaybackRateControls();
           enhanceVideoScrubbing();
 
           player.dimensions(player.currentWidth(), player.currentHeight());
@@ -157,8 +157,6 @@ self.initializePlaybackRateControls();
         }
       }
     );
-
-    
   }
 
   loadImage(imageSrc) {
@@ -981,6 +979,9 @@ class DrawingManager {
 
     // Enable click-through for video controls
     this.enableClickThrough();
+
+    // IMPORTANT: Clear the current tool selection so shapes can be placed again
+    this.state.currentTool = null;
   }
 
   // Add this new method to enable shape editing
@@ -1040,7 +1041,10 @@ class DrawingManager {
     this.state.lastX = 0;
     this.state.lastY = 0;
     this.state.startPoint = null;
+
+    // CRITICAL: Ensure drawing mode is disabled
     this.canvas.isDrawingMode = false;
+
     this.canvas.selection = true; // Keep selection enabled for shape editing
     this.canvas.hoverCursor = "default";
     this.canvas.defaultCursor = "default";
@@ -1052,6 +1056,9 @@ class DrawingManager {
         obj.editable = false; // Disable text editing when tool is disabled
       }
     });
+
+    // Re-enable click-through for video
+    this.enableClickThrough();
   }
 
   cleanupToolEvents() {
@@ -1278,7 +1285,6 @@ class DrawingApp {
     });
 
     // Edit mode
-    // In your setupEventListeners method, update the edit mode button:
     const editModeBtn = document.querySelector(".secondary-btn.edit-mode");
     if (editModeBtn) {
       editModeBtn.addEventListener("click", (e) => {
@@ -1291,8 +1297,14 @@ class DrawingApp {
           // Clear any active selection
           this.drawingManager.canvas.discardActiveObject();
           this.drawingManager.canvas.renderAll();
+
+          // Re-enable click-through for video
+          this.drawingManager.enableClickThrough();
         } else {
-          // Enter edit mode
+          // Enter edit mode - FIRST disable any active drawing tools
+          this.drawingManager.disableActiveTool();
+
+          // THEN enter edit mode
           editModeBtn.classList.add("active");
           this.drawingManager.initializeEditMode();
           this.state.editMode = true;
@@ -1302,8 +1314,8 @@ class DrawingApp {
             tool.classList.remove("active");
           });
 
-          // Clear any drawing modes
-          this.drawingManager.disableDrawing();
+          // Disable click-through when in edit mode
+          this.drawingManager.disableClickThrough();
         }
       });
     }
@@ -1609,6 +1621,9 @@ class DrawingApp {
       upperCanvas.style.cursor = "default";
       // Enable click-through when tool is deactivated
       this.drawingManager.enableClickThrough();
+
+      // Clear current tool
+      this.state.currentTool = null;
     } else {
       tools.forEach((t) => t.classList.remove("active"));
       toolElement.classList.add("active");
@@ -1633,30 +1648,36 @@ class DrawingApp {
   }
 
   showPlaybackSpeedMenu() {
-  const playbackRates = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
-  
-  // Remove existing menu if any
-  const existingMenu = document.querySelector('.playback-speed-menu');
-  if (existingMenu) {
-    existingMenu.remove();
-    return;
-  }
+    const playbackRates = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
 
-  // Create menu
-  const menu = document.createElement('div');
-  menu.className = 'playback-speed-menu';
-  menu.innerHTML = `
+    // Remove existing menu if any
+    const existingMenu = document.querySelector(".playback-speed-menu");
+    if (existingMenu) {
+      existingMenu.remove();
+      return;
+    }
+
+    // Create menu
+    const menu = document.createElement("div");
+    menu.className = "playback-speed-menu";
+    menu.innerHTML = `
     <div class="playback-speed-options">
-      ${playbackRates.map(rate => `
-        <button class="speed-option ${rate === 1 ? 'active' : ''}" data-rate="${rate}">
+      ${playbackRates
+        .map(
+          (rate) => `
+        <button class="speed-option ${
+          rate === 1 ? "active" : ""
+        }" data-rate="${rate}">
           ${rate}x
         </button>
-      `).join('')}
+      `
+        )
+        .join("")}
     </div>
   `;
 
-  // Style the menu
-  menu.style.cssText = `
+    // Style the menu
+    menu.style.cssText = `
     position: fixed;
     bottom: 80px;
     left: 50%;
@@ -1668,14 +1689,14 @@ class DrawingApp {
     z-index: 1000;
   `;
 
-  menu.querySelector('.playback-speed-options').style.cssText = `
+    menu.querySelector(".playback-speed-options").style.cssText = `
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 5px;
   `;
 
-  menu.querySelectorAll('.speed-option').forEach(option => {
-    option.style.cssText = `
+    menu.querySelectorAll(".speed-option").forEach((option) => {
+      option.style.cssText = `
       padding: 8px 12px;
       border: none;
       border-radius: 4px;
@@ -1683,57 +1704,61 @@ class DrawingApp {
       cursor: pointer;
       font-size: 14px;
     `;
-    
-    option.addEventListener('click', (e) => {
-      const rate = parseFloat(e.target.getAttribute('data-rate'));
-      this.setPlaybackRate(rate);
-      menu.remove();
-    });
-  });
 
-  document.body.appendChild(menu);
-
-  // Close menu when clicking outside
-  setTimeout(() => {
-    document.addEventListener('click', function closeMenu(e) {
-      if (!menu.contains(e.target) && !e.target.closest('.playback-speed')) {
+      option.addEventListener("click", (e) => {
+        const rate = parseFloat(e.target.getAttribute("data-rate"));
+        this.setPlaybackRate(rate);
         menu.remove();
-        document.removeEventListener('click', closeMenu);
-      }
+      });
     });
-  }, 0);
-}
 
-setPlaybackRate(rate) {
-  if (this.videoManager.player1) {
-    this.videoManager.player1.playbackRate(rate);
+    document.body.appendChild(menu);
+
+    // Close menu when clicking outside
+    setTimeout(() => {
+      document.addEventListener("click", function closeMenu(e) {
+        if (!menu.contains(e.target) && !e.target.closest(".playback-speed")) {
+          menu.remove();
+          document.removeEventListener("click", closeMenu);
+        }
+      });
+    }, 0);
   }
-  if (this.videoManager.player2) {
-    this.videoManager.player2.playbackRate(rate);
-  }
-  
-  // Update button text if you want to show current speed
-  const playbackBtn = document.querySelector('.tool-btn.playback-speed');
-  if (playbackBtn) {
-    const text = playbackBtn.querySelector('text');
-    if (text) {
-      text.textContent = rate + 'x';
+
+  setPlaybackRate(rate) {
+    if (this.videoManager.player1) {
+      this.videoManager.player1.playbackRate(rate);
+    }
+    if (this.videoManager.player2) {
+      this.videoManager.player2.playbackRate(rate);
+    }
+
+    // Update button text if you want to show current speed
+    const playbackBtn = document.querySelector(".tool-btn.playback-speed");
+    if (playbackBtn) {
+      const text = playbackBtn.querySelector("text");
+      if (text) {
+        text.textContent = rate + "x";
+      }
     }
   }
-}
 
   activateTool(toolName) {
+    // Store the current tool
+    this.state.currentTool = toolName;
+    
     // Disable click-through when using tools
     this.drawingManager.disableClickThrough();
 
-    // First disable edit mode if it's active
-    if (this.state.editMode) {
-      const editModeBtn = document.querySelector(".secondary-btn.edit-mode");
-      if (editModeBtn) {
-        editModeBtn.classList.remove("active");
-      }
-      this.drawingManager.disableEditMode();
-      this.state.editMode = false;
+    // First disable edit mode if it's active (EXCEPT for shape tools)
+    const shapeTools = ['rectangle', 'circle', 'triangle', 'line', 'text', 'image'];
+    if (this.state.editMode && !shapeTools.includes(toolName)) {
+        const editModeBtn = document.querySelector(".secondary-btn.edit-mode");
+        if (editModeBtn) {
+            editModeBtn.classList.remove("active");
+        }
+        this.drawingManager.disableEditMode();
+        this.state.editMode = false;
     }
 
     this.drawingManager.disableDrawing();
@@ -1749,13 +1774,13 @@ setPlaybackRate(rate) {
 
     switch (toolName) {
       case "playback-speed":
-      this.showPlaybackSpeedMenu();
-      // Deactivate the button after showing menu
-      const playbackBtn = document.querySelector('.tool-btn.playback-speed');
-      if (playbackBtn) {
-        playbackBtn.classList.remove('active');
-      }
-      break;
+        this.showPlaybackSpeedMenu();
+        // Deactivate the button after showing menu
+        const playbackBtn = document.querySelector(".tool-btn.playback-speed");
+        if (playbackBtn) {
+          playbackBtn.classList.remove("active");
+        }
+        break;
       case "draw":
         this.drawingManager.initializeFreeDrawing();
         break;
