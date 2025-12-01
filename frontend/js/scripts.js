@@ -159,68 +159,6 @@ class VideoManager {
     );
   }
 
-  // Add this method to the VideoManager class
-  handleSplitScreenLayout() {
-    const secondWrapper = document.querySelector("#second-video-wrapper");
-    const videosWrapper = document.querySelector(".videos-wrapper");
-
-    if (secondWrapper.classList.contains("hidden")) {
-      // Single video mode
-      secondWrapper.classList.remove("hidden");
-      this.initializeSecondPlayer();
-      this.addFloatingUploadButtons();
-
-      // Add split screen class for CSS targeting
-      videosWrapper.classList.add("split-screen-active");
-
-      // Set specific dimensions for each video
-      const videoWrappers = document.querySelectorAll(".video-wrapper");
-      videoWrappers.forEach((wrapper) => {
-        wrapper.style.width = "50%";
-        wrapper.style.flexShrink = "0";
-      });
-
-      // Left align first video
-      const firstVideo = this.player1.el();
-      firstVideo.style.objectPosition = "left center";
-
-      // Right align second video
-      if (this.player2) {
-        const secondVideo = this.player2.el();
-        secondVideo.style.objectPosition = "right center";
-      }
-    } else {
-      // Back to single video mode
-      secondWrapper.classList.add("hidden");
-      videosWrapper.classList.remove("split-screen-active");
-
-      // Reset dimensions
-      const firstWrapper = document.querySelector(".video-wrapper:first-child");
-      firstWrapper.style.width = "100%";
-      firstWrapper.style.justifyContent = "center";
-
-      // Reset video alignment
-      const firstVideo = this.player1.el();
-      firstVideo.style.objectPosition = "center center";
-
-      if (this.player2) {
-        this.player2.pause();
-        this.player2.dispose();
-        this.player2 = null;
-      }
-      this.removeFloatingUploadButtons();
-    }
-
-    // Update canvas dimensions
-    setTimeout(() => {
-      if (window.drawingManager) {
-        window.drawingManager.updateDimensions();
-      }
-    }, 100);
-
-    return true;
-  }
-
   loadImage(imageSrc) {
     const imgElement = document.createElement("img");
     imgElement.src = imageSrc;
@@ -365,80 +303,35 @@ class VideoManager {
   }
 
   handleSplitScreen() {
-    return this.handleSplitScreenLayout();
+    const secondWrapper = document.querySelector("#second-video-wrapper");
+    if (secondWrapper.classList.contains("hidden")) {
+      secondWrapper.classList.remove("hidden");
+      this.initializeSecondPlayer();
+      this.addFloatingUploadButtons();
+    } else {
+      secondWrapper.classList.add("hidden");
+      if (this.player2) {
+        this.player2.pause();
+      }
+      this.removeFloatingUploadButtons();
+    }
+    return true; // To trigger canvas update
   }
-  // handleSplitScreen() {
-  //   const secondWrapper = document.querySelector("#second-video-wrapper");
-  //   if (secondWrapper.classList.contains("hidden")) {
-  //     secondWrapper.classList.remove("hidden");
-  //     this.initializeSecondPlayer();
-  //     this.addFloatingUploadButtons();
-  //   } else {
-  //     secondWrapper.classList.add("hidden");
-  //     if (this.player2) {
-  //       this.player2.pause();
-  //     }
-  //     this.removeFloatingUploadButtons();
-  //   }
-  //   return true; // To trigger canvas update
-  // }
 
   updateDimensions() {
-    const videosWrapper = document.querySelector(".videos-wrapper");
-    const isSplitScreen = videosWrapper.classList.contains(
-      "split-screen-active"
-    );
-
     if (this.player1) {
-      if (isSplitScreen) {
-        // In split screen, each video gets 50% width
-        const containerWidth = videosWrapper.clientWidth / 2;
-        const containerHeight = videosWrapper.clientHeight;
-        this.player1.dimensions(containerWidth, containerHeight);
-
-        // Ensure proper alignment
-        const firstVideo = this.player1.el().querySelector("video");
-        if (firstVideo) {
-          firstVideo.style.objectPosition = "left center";
-        }
-      } else {
-        // Single video mode - full width
-        this.player1.dimensions(
-          videosWrapper.clientWidth,
-          videosWrapper.clientHeight
-        );
-      }
+      this.player1.dimensions(
+        this.player1.currentWidth(),
+        this.player1.currentHeight()
+      );
     }
-
     if (this.player2) {
-      if (isSplitScreen) {
-        const containerWidth = videosWrapper.clientWidth / 2;
-        const containerHeight = videosWrapper.clientHeight;
-        this.player2.dimensions(containerWidth, containerHeight);
-
-        // Ensure proper alignment
-        const secondVideo = this.player2.el().querySelector("video");
-        if (secondVideo) {
-          secondVideo.style.objectPosition = "right center";
-        }
-      }
+      this.player2.dimensions(
+        this.player2.currentWidth(),
+        this.player2.currentHeight()
+      );
     }
   }
-
-  // updateDimensions() {
-  //   if (this.player1) {
-  //     this.player1.dimensions(
-  //       this.player1.currentWidth(),
-  //       this.player1.currentHeight()
-  //     );
-  //   }
-  //   if (this.player2) {
-  //     this.player2.dimensions(
-  //       this.player2.currentWidth(),
-  //       this.player2.currentHeight()
-  //     );
-  //   }
-  // }
 
   addFloatingUploadButtons() {
     this.removeFloatingUploadButtons();
@@ -655,38 +548,12 @@ class DrawingManager {
     });
   }
 
-  // updateDimensions() {
-  //   const containerRect = document
-  //     .querySelector(".video-container")
-  //     .getBoundingClientRect();
-  //   this.canvas.setWidth(containerRect.width);
-  //   this.canvas.setHeight(containerRect.height);
-  //   this.canvas.renderAll();
-  // }
-
   updateDimensions() {
     const containerRect = document
       .querySelector(".video-container")
       .getBoundingClientRect();
-    const videosWrapper = document.querySelector(".videos-wrapper");
-    const isSplitScreen = videosWrapper.classList.contains(
-      "split-screen-active"
-    );
-
-    if (isSplitScreen) {
-      // In split screen, canvas should cover both videos
-      this.canvas.setWidth(containerRect.width);
-      this.canvas.setHeight(videosWrapper.clientHeight);
-
-      // Position canvas properly
-      const canvasElement = this.canvas.getElement();
-      canvasElement.style.width = "100%";
-      canvasElement.style.height = "100%";
-    } else {
-      this.canvas.setWidth(containerRect.width);
-      this.canvas.setHeight(videosWrapper.clientHeight);
-    }
-
+    this.canvas.setWidth(containerRect.width);
+    this.canvas.setHeight(containerRect.height);
     this.canvas.renderAll();
   }
 
@@ -1879,26 +1746,19 @@ class DrawingApp {
   activateTool(toolName) {
     // Store the current tool
     this.state.currentTool = toolName;
-
+    
     // Disable click-through when using tools
     this.drawingManager.disableClickThrough();
 
     // First disable edit mode if it's active (EXCEPT for shape tools)
-    const shapeTools = [
-      "rectangle",
-      "circle",
-      "triangle",
-      "line",
-      "text",
-      "image",
-    ];
+    const shapeTools = ['rectangle', 'circle', 'triangle', 'line', 'text', 'image'];
     if (this.state.editMode && !shapeTools.includes(toolName)) {
-      const editModeBtn = document.querySelector(".secondary-btn.edit-mode");
-      if (editModeBtn) {
-        editModeBtn.classList.remove("active");
-      }
-      this.drawingManager.disableEditMode();
-      this.state.editMode = false;
+        const editModeBtn = document.querySelector(".secondary-btn.edit-mode");
+        if (editModeBtn) {
+            editModeBtn.classList.remove("active");
+        }
+        this.drawingManager.disableEditMode();
+        this.state.editMode = false;
     }
 
     this.drawingManager.disableDrawing();
