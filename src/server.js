@@ -26,7 +26,7 @@ const recordingsFolder = path.join(process.cwd(), 'recordings');
 // }));
 
 const corsOptions = {
-  origin: "https://annotation.tuneup.golf",
+  origin: "*",
   credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
