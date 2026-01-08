@@ -1,0 +1,1341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Processor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 800px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .container.dual-mode {
+            max-width: 1200px;
+        }
+
+        .container.video-page {
+            max-width: 100%;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            color: #667eea;
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 16px;
+        }
+
+        .toggle-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            border: 2px solid #e0e0e0;
+        }
+
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+        }
+
+        .checkbox-container input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .checkbox-container label {
+            font-size: 16px;
+            color: #333;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .checkbox-desc {
+            color: #666;
+            font-size: 14px;
+            margin-top: 8px;
+            margin-left: 32px;
+        }
+
+        .sections-container {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            transition: all 0.3s ease;
+        }
+
+        .sections-container.dual-mode {
+            flex-direction: row;
+            flex-wrap: wrap;
+        }
+
+        .upload-section {
+            margin-bottom: 20px;
+            padding: 25px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            border: 2px solid #e0e0e0;
+            transition: all 0.3s ease;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .sections-container.dual-mode .upload-section {
+            flex: 1;
+            min-width: 0;
+            margin-bottom: 0;
+        }
+
+        .upload-section h3 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 30px;
+            height: 30px;
+            background: #667eea;
+            color: white;
+            border-radius: 50%;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .text-input {
+            width: 100%;
+            padding: 15px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: #f8f9fa;
+            margin-bottom: 20px;
+        }
+
+        .text-input:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+        }
+
+        .text-input.readonly {
+            background: #e9ecef;
+            color: #495057;
+            cursor: not-allowed;
+        }
+
+        .file-upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 12px;
+            padding: 30px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #f8f9fa;
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .file-upload-area:hover {
+            background: #e8ebf7;
+            border-color: #764ba2;
+        }
+
+        .file-upload-area.dragover {
+            background: #e8ebf7;
+            border-color: #764ba2;
+            transform: scale(1.02);
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .upload-text {
+            color: #666;
+            font-size: 16px;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+
+        .upload-subtext {
+            color: #999;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .progress-section {
+            display: none;
+            margin-top: 30px;
+            transition: all 0.3s ease;
+        }
+
+        .sections-container.dual-mode + .progress-section {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        .section-progress-container {
+            display: none;
+            margin-top: 25px;
+            transition: all 0.3s ease;
+        }
+
+        .section-progress {
+            margin-bottom: 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            border: 2px solid #e0e0e0;
+        }
+
+        .section-title {
+            font-size: 18px;
+            color: #333;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e0e0e0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .progress-item {
+            margin-bottom: 20px;
+        }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            color: #333;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            height: 12px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.3s ease;
+            border-radius: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress-bar::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                rgba(255, 255, 255, 0.3),
+                transparent
+            );
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .upload-status {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .status-waiting {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        .status-uploading {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .status-completed {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .next-button, .upload-button {
+            display: none;
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 30px;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .next-button:hover, .upload-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .next-button:active, .upload-button:active {
+            transform: translateY(0);
+        }
+
+        .next-button:disabled, .upload-button:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .file-preview {
+            display: none;
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            border: 2px solid #e0e0e0;
+        }
+
+        .file-preview-content {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .video-icon {
+            font-size: 48px;
+            flex-shrink: 0;
+        }
+
+        .file-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .file-name-preview {
+            color: #333;
+            font-weight: 600;
+            font-size: 16px;
+            word-break: break-word;
+            margin-bottom: 5px;
+        }
+
+        .file-size {
+            color: #999;
+            font-size: 14px;
+        }
+
+        .close-button {
+            background: #ff4757;
+            color: white;
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .close-button:hover {
+            background: #ff3838;
+            transform: scale(1.1);
+        }
+
+        /* Video Player Page Styles */
+        .video-page-content {
+            display: none;
+        }
+
+        .videos-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .video-player-section {
+            background: #f8f9fa;
+            border-radius: 12px;
+            /* overflow: hidden;
+            max-height: 100%; */
+        }
+
+        .video-player-section h3 {
+            padding: 20px;
+            margin: 0;
+            background: #667eea;
+            color: white;
+            font-size: 18px;
+        }
+
+        .video-container {
+            width: 100%;
+            background: #000;
+            /* overflow: hidden; */
+            height:500px;
+        }
+
+        .video-player {
+            width: 100%;
+            display: block;
+            outline: none;
+            height: 100%;
+        }
+
+        .video-info {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+
+        .video-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .video-details {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .back-button {
+            width: 100%;
+            padding: 16px;
+            background: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .back-button:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+        }
+
+        /* Side-by-side progress bars for dual mode */
+        .sections-container.dual-mode .section-progress-container {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .sections-container.dual-mode + .progress-section {
+            flex-direction: row;
+            gap: 30px;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 1100px) {
+            .container.dual-mode {
+                max-width: 1000px;
+                padding: 30px;
+            }
+            
+            .sections-container.dual-mode {
+                flex-direction: column;
+            }
+            
+            .sections-container.dual-mode + .progress-section {
+                flex-direction: column;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+            
+            .sections-container.dual-mode {
+                gap: 20px;
+            }
+            
+            .upload-section {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="container">
+        <!-- Upload Page -->
+        <div id="uploadPage">
+            <header>
+                <h1>📄 Dual File Processor</h1>
+                <p class="subtitle" id="subtitle">Upload and process files with dual mode support</p>
+            </header>
+
+            <div class="toggle-section" id="toggleSection">
+                <div class="checkbox-container">
+                    <input type="checkbox" id="dualModeToggle">
+                    <label for="dualModeToggle">Enable Dual Mode (Upload two files)</label>
+                </div>
+                <div class="checkbox-desc">
+                    When enabled, you can upload two files simultaneously. First section requires URL and file, second section requires only file.
+                </div>
+            </div>
+
+            <div class="sections-container" id="sectionsContainer">
+                <!-- Section 1 -->
+                <div class="upload-section" id="section1">
+                    <h3><span class="section-number">1</span> <span id="section1Title">Primary Section (URL + File)</span></h3>
+                    
+                    <input type="text" id="textInput" class="text-input readonly" placeholder="Enter URL..." readonly>
+                    
+                    <div id="fileUploadArea1" class="file-upload-area">
+                        <div class="upload-icon">📁</div>
+                        <div class="upload-text" id="uploadText1">Drag & drop your first video here</div>
+                        <div class="upload-subtext" id="uploadSubtext1">or click to browse (Video files only)</div>
+                        <input type="file" id="fileInput1" accept="video/*">
+                    </div>
+                    
+                    <div id="filePreview1" class="file-preview">
+                        <div class="file-preview-content">
+                            <div class="video-icon">🎬</div>
+                            <div class="file-info">
+                                <div class="file-name-preview" id="fileNamePreview1"></div>
+                                <div class="file-size" id="fileSize1"></div>
+                            </div>
+                            <button class="close-button" data-section="1">✕</button>
+                        </div>
+                    </div>
+
+                    <!-- Section 1 Progress (Inline) -->
+                    <div class="section-progress-container" id="sectionProgressContainer1">
+                        <div class="section-progress">
+                            <div class="section-title">
+                                <span class="section-number">1</span>
+                                Progress
+                            </div>
+                            <div class="progress-item">
+                                <div class="progress-label">
+                                    <span>Uploading</span>
+                                    <span id="uploadPercent1">0%</span>
+                                </div>
+                                <div class="progress-bar-container">
+                                    <div class="progress-bar" id="uploadProgress1"></div>
+                                </div>
+                            </div>
+                            <div class="progress-item">
+                                <div class="progress-label">
+                                    <span>Converting</span>
+                                    <span id="convertPercent1">0%</span>
+                                </div>
+                                <div class="progress-bar-container">
+                                    <div class="progress-bar" id="convertProgress1"></div>
+                                </div>
+                            </div>
+                            <div id="status1" class="upload-status status-waiting">Waiting to upload...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 2 (Hidden by default) -->
+                <div class="upload-section hidden" id="section2">
+                    <h3><span class="section-number">2</span> Secondary Section (File Only)</h3>
+                    
+                    <div id="fileUploadArea2" class="file-upload-area">
+                        <div class="upload-icon">📁</div>
+                        <div class="upload-text">Drag & drop your second video here</div>
+                        <div class="upload-subtext">or click to browse (Video files only)</div>
+                        <input type="file" id="fileInput2" accept="video/*">
+                    </div>
+                    
+                    <div id="filePreview2" class="file-preview">
+                        <div class="file-preview-content">
+                            <div class="video-icon">🎬</div>
+                            <div class="file-info">
+                                <div class="file-name-preview" id="fileNamePreview2"></div>
+                                <div class="file-size" id="fileSize2"></div>
+                            </div>
+                            <button class="close-button" data-section="2">✕</button>
+                        </div>
+                    </div>
+
+                    <!-- Section 2 Progress (Inline) -->
+                    <div class="section-progress-container" id="sectionProgressContainer2">
+                        <div class="section-progress">
+                            <div class="section-title">
+                                <span class="section-number">2</span>
+                                Progress
+                            </div>
+                            <div class="progress-item">
+                                <div class="progress-label">
+                                    <span>Uploading</span>
+                                    <span id="uploadPercent2">0%</span>
+                                </div>
+                                <div class="progress-bar-container">
+                                    <div class="progress-bar" id="uploadProgress2"></div>
+                                </div>
+                            </div>
+                            <div class="progress-item">
+                                <div class="progress-label">
+                                    <span>Converting</span>
+                                    <span id="convertPercent2">0%</span>
+                                </div>
+                                <div class="progress-bar-container">
+                                    <div class="progress-bar" id="convertProgress2"></div>
+                                </div>
+                            </div>
+                            <div id="status2" class="upload-status status-waiting">Waiting to upload...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Combined Progress Section (For single mode) -->
+            <div class="progress-section" id="progressSection">
+                <div class="section-progress" id="sectionProgress1Combined">
+                    <div class="section-title">Progress</div>
+                    <div class="progress-item">
+                        <div class="progress-label">
+                            <span>Uploading</span>
+                            <span id="uploadPercent1Combined">0%</span>
+                        </div>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar" id="uploadProgress1Combined"></div>
+                        </div>
+                    </div>
+                    <div class="progress-item">
+                        <div class="progress-label">
+                            <span>Converting</span>
+                            <span id="convertPercent1Combined">0%</span>
+                        </div>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar" id="convertProgress1Combined"></div>
+                        </div>
+                    </div>
+                    <div id="status1Combined" class="upload-status status-waiting">Waiting to upload...</div>
+                </div>
+            </div>
+
+            <button class="upload-button" id="uploadButton">Upload All</button>
+            <button class="next-button" id="nextButton">Next</button>
+        </div>
+
+        <!-- Video Player Page -->
+        <div class="video-page-content" id="videoPage">
+            <header>
+                <h1>🎬 Video Players</h1>
+                <p class="subtitle">Watch your uploaded videos</p>
+            </header>
+
+            <div class="videos-container" id="videosContainer">
+                <!-- Videos will be dynamically added here -->
+            </div>
+
+            <button class="back-button" id="backButton">Back to Upload</button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlParam = urlParams.get('url');
+        
+        const container = document.getElementById('container');
+        const uploadPage = document.getElementById('uploadPage');
+        const videoPage = document.getElementById('videoPage');
+        const dualModeToggle = document.getElementById('dualModeToggle');
+        const sectionsContainer = document.getElementById('sectionsContainer');
+        const section2 = document.getElementById('section2');
+        const toggleSection = document.getElementById('toggleSection');
+        const subtitle = document.getElementById('subtitle');
+        const section1Title = document.getElementById('section1Title');
+        const uploadText1 = document.getElementById('uploadText1');
+        const uploadSubtext1 = document.getElementById('uploadSubtext1');
+        
+        // Section 1 elements
+        const textInput = document.getElementById('textInput');
+        const fileUploadArea1 = document.getElementById('fileUploadArea1');
+        const fileInput1 = document.getElementById('fileInput1');
+        const filePreview1 = document.getElementById('filePreview1');
+        const fileNamePreview1 = document.getElementById('fileNamePreview1');
+        const fileSize1 = document.getElementById('fileSize1');
+        
+        // Section 2 elements
+        const fileUploadArea2 = document.getElementById('fileUploadArea2');
+        const fileInput2 = document.getElementById('fileInput2');
+        const filePreview2 = document.getElementById('filePreview2');
+        const fileNamePreview2 = document.getElementById('fileNamePreview2');
+        const fileSize2 = document.getElementById('fileSize2');
+        
+        // Progress containers
+        const sectionProgressContainer1 = document.getElementById('sectionProgressContainer1');
+        const sectionProgressContainer2 = document.getElementById('sectionProgressContainer2');
+        const progressSection = document.getElementById('progressSection');
+        
+        const uploadButton = document.getElementById('uploadButton');
+        const nextButton = document.getElementById('nextButton');
+        const backButton = document.getElementById('backButton');
+        const videosContainer = document.getElementById('videosContainer');
+
+        // State management
+        const state = {
+            hasUrlParam: !!urlParam,
+            dualMode: false,
+            uploadStarted: false,
+            section1: {
+                file: null,
+                url: null,
+                uploadProgress: 0,
+                convertProgress: 0,
+                completed: false,
+                videoURL: null
+            },
+            section2: {
+                file: null,
+                uploadProgress: 0,
+                convertProgress: 0,
+                completed: false,
+                videoURL: null
+            }
+        };
+
+        // Initialize based on URL parameter
+        function initializeFromUrlParam() {
+            if (urlParam) {
+                // Set URL in text input (always readonly)
+                textInput.value = urlParam;
+                textInput.classList.add('readonly');
+                state.section1.url = urlParam;
+
+                textInput.style.display = 'flex'
+                
+                
+                // Hide file upload area for section 1
+                fileUploadArea1.style.display = 'none';
+                
+                // Update section 1 title and description
+                section1Title.textContent = "Primary Section (URL Only)";
+                uploadText1.textContent = "URL provided - File upload not required";
+                uploadSubtext1.textContent = "Processing from provided URL";
+                
+                // Update subtitle
+                subtitle.textContent = "Processing file from URL with dual mode support";
+                
+                // Update button text
+                uploadButton.textContent = "Process URL & Upload";
+                
+                // Update state
+                state.section1.file = null; // No file needed when URL is provided
+                
+                // Show upload button immediately if URL is provided
+                uploadButton.style.display = 'block';
+                uploadButton.disabled = false;
+            } else {
+                // No URL parameter, show normal interface
+                // textInput.placeholder = "Enter URL... (Optional)";
+                // textInput.classList.remove('readonly');
+                // textInput.readOnly = false;
+                textInput.style.display = 'none'
+                
+                // Show file upload area for section 1
+                fileUploadArea1.style.display = 'flex';
+                
+                // Reset section 1 title and description
+                section1Title.textContent = "Primary Section (URL + File)";
+                uploadText1.textContent = "Drag & drop your first video here";
+                uploadSubtext1.textContent = "or click to browse (Video files only)";
+                
+                // Reset subtitle
+                subtitle.textContent = "Upload and process files with dual mode support";
+                
+                // Reset button text
+                uploadButton.textContent = "Upload All";
+                
+                // Update button state based on selection
+                updateUploadButtonState();
+            }
+        }
+
+        // Call initialization
+        initializeFromUrlParam();
+
+        // Dual mode toggle handler
+        dualModeToggle.addEventListener('change', function() {
+            state.dualMode = this.checked;
+            
+            if (!state.uploadStarted) {
+                if (this.checked) {
+                    // Enable dual mode
+                    container.classList.add('dual-mode');
+                    sectionsContainer.classList.add('dual-mode');
+                    section2.classList.remove('hidden');
+                    progressSection.style.display = 'none'; // Hide combined progress
+                    
+                    // Show inline progress containers
+                    sectionProgressContainer1.style.display = 'block';
+                    sectionProgressContainer2.style.display = 'block';
+                    
+                    updateUploadButtonState();
+                } else {
+                    // Disable dual mode
+                    container.classList.remove('dual-mode');
+                    sectionsContainer.classList.remove('dual-mode');
+                    section2.classList.add('hidden');
+                    
+                    // Hide inline progress containers
+                    sectionProgressContainer1.style.display = 'none';
+                    sectionProgressContainer2.style.display = 'none';
+                    
+                    // If user unchecks after selecting file in section 2, reset it
+                    if (state.section2.file) {
+                        resetSection(2);
+                    }
+                    updateUploadButtonState();
+                }
+            } else {
+                // If upload has started, don't allow toggle
+                this.checked = true;
+                alert('Cannot change mode after upload has started');
+            }
+        });
+
+        // File upload handling for both sections
+        function setupFileUpload(sectionNumber) {
+            const fileUploadArea = document.getElementById(`fileUploadArea${sectionNumber}`);
+            const fileInput = document.getElementById(`fileInput${sectionNumber}`);
+            const filePreview = document.getElementById(`filePreview${sectionNumber}`);
+            const fileNamePreview = document.getElementById(`fileNamePreview${sectionNumber}`);
+            const fileSize = document.getElementById(`fileSize${sectionNumber}`);
+            const closeButton = filePreview.querySelector('.close-button');
+
+            // Click handler
+            if (fileUploadArea.style.display !== 'none') {
+                fileUploadArea.addEventListener('click', () => fileInput.click());
+            }
+            
+            // File change handler
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    handleFileSelection(e.target.files[0], sectionNumber);
+                }
+            });
+
+            // Drag and drop handlers (only if upload area is visible)
+            if (fileUploadArea.style.display !== 'none') {
+                fileUploadArea.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    fileUploadArea.classList.add('dragover');
+                });
+
+                fileUploadArea.addEventListener('dragleave', () => {
+                    fileUploadArea.classList.remove('dragover');
+                });
+
+                fileUploadArea.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    fileUploadArea.classList.remove('dragover');
+                    const file = e.dataTransfer.files[0];
+                    if (file && file.type.startsWith('video/')) {
+                        handleFileSelection(file, sectionNumber);
+                    } else {
+                        alert('Please select a video file');
+                    }
+                });
+            }
+
+            // Close button handler
+            closeButton.addEventListener('click', () => {
+                resetSection(sectionNumber);
+            });
+        }
+
+        // Initialize both sections
+        setupFileUpload(1);
+        setupFileUpload(2);
+
+        function handleFileSelection(file, sectionNumber) {
+            if (!file.type.startsWith('video/')) {
+                alert('Please select a video file');
+                return;
+            }
+
+            // Update state
+            if (sectionNumber === 1) {
+                state.section1.file = file;
+            } else {
+                state.section2.file = file;
+            }
+
+            // Update UI
+            const fileNamePreview = document.getElementById(`fileNamePreview${sectionNumber}`);
+            const fileSize = document.getElementById(`fileSize${sectionNumber}`);
+            const fileUploadArea = document.getElementById(`fileUploadArea${sectionNumber}`);
+            const filePreview = document.getElementById(`filePreview${sectionNumber}`);
+
+            fileNamePreview.textContent = file.name;
+            fileSize.textContent = formatFileSize(file.size);
+            
+            if (sectionNumber === 1 && fileUploadArea.style.display !== 'none') {
+                fileUploadArea.style.display = 'none';
+            } else if (sectionNumber === 2) {
+                fileUploadArea.style.display = 'none';
+            }
+            
+            filePreview.style.display = 'block';
+            
+            updateUploadButtonState();
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+            return (bytes / (1024 * 1024 * 1024)).toFixed(1) + ' GB';
+        }
+
+        function resetSection(sectionNumber) {
+            const fileUploadArea = document.getElementById(`fileUploadArea${sectionNumber}`);
+            const filePreview = document.getElementById(`filePreview${sectionNumber}`);
+            const fileInput = document.getElementById(`fileInput${sectionNumber}`);
+
+            // Update state
+            if (sectionNumber === 1) {
+                state.section1.file = null;
+                state.section1.uploadProgress = 0;
+                state.section1.convertProgress = 0;
+                state.section1.completed = false;
+            } else {
+                state.section2.file = null;
+                state.section2.uploadProgress = 0;
+                state.section2.convertProgress = 0;
+                state.section2.completed = false;
+            }
+
+            // Reset UI
+            fileInput.value = '';
+            filePreview.style.display = 'none';
+            
+            // Only show upload area if it's not hidden due to URL parameter
+            if (sectionNumber === 1 && !state.hasUrlParam) {
+                fileUploadArea.style.display = 'flex';
+            } else if (sectionNumber === 2) {
+                fileUploadArea.style.display = 'flex';
+            }
+
+            updateUploadButtonState();
+        }
+
+        function updateUploadButtonState() {
+            if (state.hasUrlParam) {
+                // When URL is provided, only need URL (no file required for section 1)
+                const section1Ready = state.section1.url;
+                const section2Ready = !state.dualMode || state.section2.file;
+                
+                if (section1Ready && section2Ready) {
+                    uploadButton.style.display = 'block';
+                    uploadButton.disabled = false;
+                } else {
+                    uploadButton.style.display = 'block';
+                    uploadButton.disabled = true;
+                }
+            } else {
+                // Normal mode - need both URL/input and file for section 1
+                const section1Ready = (state.section1.url || state.section1.file) && state.section1.file;
+                const section2Ready = !state.dualMode || state.section2.file;
+                
+                if (section1Ready && section2Ready) {
+                    uploadButton.style.display = 'block';
+                    uploadButton.disabled = false;
+                } else {
+                    uploadButton.style.display = 'block';
+                    uploadButton.disabled = true;
+                }
+            }
+        }
+
+        // Update status display
+        function updateStatus(sectionNumber, status, message) {
+            const statusElement = state.dualMode ? 
+                document.getElementById(`status${sectionNumber}`) : 
+                document.getElementById(`status1Combined`);
+            statusElement.textContent = message;
+            statusElement.className = `upload-status status-${status}`;
+            statusElement.style.display = 'block';
+        }
+
+        // Upload button handler
+        uploadButton.addEventListener('click', () => {
+            if (state.uploadStarted) return;
+            
+            state.uploadStarted = true;
+            dualModeToggle.disabled = true;
+            uploadButton.disabled = true;
+            uploadButton.textContent = state.hasUrlParam ? 'Processing URL...' : 'Uploading...';
+            
+            // Hide toggle section after upload starts
+            toggleSection.style.display = 'none';
+            
+            // Show appropriate progress section
+            if (state.dualMode) {
+                progressSection.style.display = 'none';
+                sectionProgressContainer1.style.display = 'block';
+                sectionProgressContainer2.style.display = 'block';
+            } else {
+                progressSection.style.display = 'block';
+                sectionProgressContainer1.style.display = 'none';
+                sectionProgressContainer2.style.display = 'none';
+            }
+            
+            // Start processing for both sections
+            startProcessing(1);
+            if (state.dualMode) {
+                startProcessing(2);
+            }
+        });
+
+        function startProcessing(sectionNumber) {
+            updateStatus(sectionNumber, 'uploading', state.hasUrlParam && sectionNumber === 1 ? 'Processing URL...' : 'Uploading...');
+            
+            // Simulate upload progress
+            let uploadValue = 0;
+            const uploadInterval = setInterval(() => {
+                uploadValue += Math.random() * 15;
+                if (uploadValue >= 100) {
+                    uploadValue = 100;
+                    clearInterval(uploadInterval);
+                    updateStatus(sectionNumber, 'uploading', 'Processing...');
+                    startConverting(sectionNumber);
+                }
+                
+                // Update state and UI
+                if (sectionNumber === 1) {
+                    state.section1.uploadProgress = uploadValue;
+                    if (state.dualMode) {
+                        document.getElementById('uploadProgress1').style.width = uploadValue + '%';
+                        document.getElementById('uploadPercent1').textContent = Math.round(uploadValue) + '%';
+                    } else {
+                        document.getElementById('uploadProgress1Combined').style.width = uploadValue + '%';
+                        document.getElementById('uploadPercent1Combined').textContent = Math.round(uploadValue) + '%';
+                    }
+                } else {
+                    state.section2.uploadProgress = uploadValue;
+                    document.getElementById('uploadProgress2').style.width = uploadValue + '%';
+                    document.getElementById('uploadPercent2').textContent = Math.round(uploadValue) + '%';
+                }
+            }, 200);
+        }
+
+        function startConverting(sectionNumber) {
+            let convertValue = 0;
+            const convertInterval = setInterval(() => {
+                convertValue += Math.random() * 12;
+                if (convertValue >= 100) {
+                    convertValue = 100;
+                    clearInterval(convertInterval);
+                    
+                    // Mark section as completed
+                    if (sectionNumber === 1) {
+                        state.section1.completed = true;
+                        state.section1.convertProgress = 100;
+                        updateStatus(1, 'completed', 'Completed!');
+                    } else {
+                        state.section2.completed = true;
+                        state.section2.convertProgress = 100;
+                        updateStatus(2, 'completed', 'Completed!');
+                    }
+                    
+                    // Create object URL for the file (only if file exists)
+                    const file = sectionNumber === 1 ? state.section1.file : state.section2.file;
+                    if (file) {
+                        const videoURL = URL.createObjectURL(file);
+                        if (sectionNumber === 1) {
+                            state.section1.videoURL = videoURL;
+                        } else {
+                            state.section2.videoURL = videoURL;
+                        }
+                    } else if (sectionNumber === 1 && state.section1.url) {
+                        // Use the URL directly if no file was uploaded
+                        state.section1.videoURL = state.section1.url;
+                    }
+                    
+                    checkAllCompleted();
+                }
+                
+                // Update UI
+                if (sectionNumber === 1) {
+                    state.section1.convertProgress = convertValue;
+                    if (state.dualMode) {
+                        document.getElementById('convertProgress1').style.width = convertValue + '%';
+                        document.getElementById('convertPercent1').textContent = Math.round(convertValue) + '%';
+                    } else {
+                        document.getElementById('convertProgress1Combined').style.width = convertValue + '%';
+                        document.getElementById('convertPercent1Combined').textContent = Math.round(convertValue) + '%';
+                    }
+                } else {
+                    state.section2.convertProgress = convertValue;
+                    document.getElementById('convertProgress2').style.width = convertValue + '%';
+                    document.getElementById('convertPercent2').textContent = Math.round(convertValue) + '%';
+                }
+            }, 200);
+        }
+
+        function checkAllCompleted() {
+            const section1Done = state.section1.completed;
+            const section2Done = !state.dualMode || state.section2.completed;
+            
+            if (section1Done && section2Done) {
+                uploadButton.style.display = 'none';
+                nextButton.style.display = 'block';
+            }
+        }
+
+        // Next button handler
+        nextButton.addEventListener('click', () => {
+            showVideoPlayers();
+        });
+
+        function showVideoPlayers() {
+            // Hide upload page
+            uploadPage.style.display = 'none';
+            
+            // Show video page
+            videoPage.style.display = 'block';
+            container.classList.add('video-page');
+            
+            // Clear existing videos
+            videosContainer.innerHTML = '';
+            
+            // Create video player for section 1
+            if (state.section1.completed) {
+                const title = state.hasUrlParam ? 'Video from URL' : (state.section1.file ? state.section1.file.name : 'Video');
+                const videoURL = state.section1.videoURL || state.section1.url;
+                
+                const videoSection = createVideoSection(1, title, videoURL);
+                videosContainer.appendChild(videoSection);
+            }
+            
+            // Create video player for section 2 if dual mode and completed
+            if (state.dualMode && state.section2.completed) {
+                const videoSection = createVideoSection(2, 
+                    state.section2.file.name,
+                    state.section2.videoURL
+                );
+                videosContainer.appendChild(videoSection);
+            }
+        }
+
+        function createVideoSection(sectionNumber, title, videoURL) {
+            const section = document.createElement('div');
+            section.className = 'video-player-section';
+            
+            section.innerHTML = `
+                <h3>Section ${sectionNumber}: ${title}</h3>
+                <div class="video-container">
+                    <video class="video-player" controls></video>
+                </div>
+            `;
+            
+            const videoPlayer = section.querySelector('.video-player');
+            initializeVideoPlayer(videoPlayer, videoURL);
+            
+            return section;
+        }
+
+        function initializeVideoPlayer(videoElement, url) {
+            if (!url) return;
+            
+            // Check if the URL is an HLS stream (.m3u8)
+            if (url.includes('.m3u8')) {
+                if (Hls.isSupported()) {
+                    const hls = new Hls();
+                    hls.loadSource(url);
+                    hls.attachMedia(videoElement);
+                    hls.on(Hls.Events.MANIFEST_PARSED, function() {
+                        videoElement.play();
+                    });
+                } else if (videoElement.canPlayType('application/vnd.apple.mpegurl')) {
+                    // For Safari which has native HLS support
+                    videoElement.src = url;
+                    videoElement.addEventListener('loadedmetadata', function() {
+                        videoElement.play();
+                    });
+                }
+            } else {
+                // Regular video file or object URL
+                videoElement.src = url;
+            }
+        }
+
+        // Back button handler
+        backButton.addEventListener('click', () => {
+            // Cleanup video players
+            document.querySelectorAll('.video-player').forEach(player => {
+                player.pause();
+                player.src = '';
+            });
+            
+            // Revoke object URLs (only if they were created from files)
+            if (state.section1.videoURL && state.section1.file) {
+                URL.revokeObjectURL(state.section1.videoURL);
+            }
+            if (state.section2.videoURL) {
+                URL.revokeObjectURL(state.section2.videoURL);
+            }
+            
+            // Clear video URLs
+            state.section1.videoURL = null;
+            state.section2.videoURL = null;
+            
+            // Show upload page
+            uploadPage.style.display = 'block';
+            videoPage.style.display = 'none';
+            container.classList.remove('video-page');
+            
+            // Show toggle section again
+            toggleSection.style.display = 'block';
+            
+            // Reset state for new upload
+            state.uploadStarted = false;
+            dualModeToggle.disabled = false;
+            
+            // Reset UI
+            uploadButton.style.display = 'block';
+            uploadButton.disabled = true;
+            uploadButton.textContent = state.hasUrlParam ? 'Process URL & Upload' : 'Upload All';
+            nextButton.style.display = 'none';
+            progressSection.style.display = 'none';
+            
+            // Reset progress bars
+            resetProgressBars();
+            
+            updateUploadButtonState();
+        });
+
+        function resetProgressBars() {
+            // Reset section 1 progress
+            state.section1.uploadProgress = 0;
+            state.section1.convertProgress = 0;
+            state.section1.completed = false;
+            
+            if (state.dualMode) {
+                document.getElementById('uploadProgress1').style.width = '0%';
+                document.getElementById('convertProgress1').style.width = '0%';
+                document.getElementById('uploadPercent1').textContent = '0%';
+                document.getElementById('convertPercent1').textContent = '0%';
+                document.getElementById('status1').style.display = 'none';
+            } else {
+                document.getElementById('uploadProgress1Combined').style.width = '0%';
+                document.getElementById('convertProgress1Combined').style.width = '0%';
+                document.getElementById('uploadPercent1Combined').textContent = '0%';
+                document.getElementById('convertPercent1Combined').textContent = '0%';
+                document.getElementById('status1Combined').style.display = 'none';
+            }
+            
+            // Reset section 2 progress
+            state.section2.uploadProgress = 0;
+            state.section2.convertProgress = 0;
+            state.section2.completed = false;
+            document.getElementById('uploadProgress2').style.width = '0%';
+            document.getElementById('convertProgress2').style.width = '0%';
+            document.getElementById('uploadPercent2').textContent = '0%';
+            document.getElementById('convertPercent2').textContent = '0%';
+            document.getElementById('status2').style.display = 'none';
+        }
+
+        // Update button state on text input change (only if not in URL param mode)
+        textInput.addEventListener('input', function() {
+            if (!state.hasUrlParam) {
+                state.section1.url = this.value.trim();
+                updateUploadButtonState();
+            }
+        });
+
+        // Initialize button state
+        updateUploadButtonState();
+    </script>
+</body>
+</html>
